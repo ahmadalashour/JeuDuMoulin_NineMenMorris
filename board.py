@@ -10,37 +10,41 @@ class Board:
     formed_mills = []
     turn: Turn = "orange"
     phase: Literal["placing", "moving", "capturing"] = "placing"
-
-    def __init__(self):
+    interactables: list[str] = None
+    sid: int = 0
+    def __init__(self, interactables: list[str] = None):
+        self.interactables = interactables or []
         self.pieces = {
-            "orange": [DraggablePiece(Piece("orange"))],
-            "white": [DraggablePiece(Piece("white"))],
+            "orange": [DraggablePiece(Piece("orange"),interactable="orange" in self.interactables, id = self.sid)],
+            "white": [DraggablePiece(Piece("white"),interactable="white" in self.interactables, id = self.sid + 1)],
         }
+        self.sid += 2
+        
         self.available_pieces = {"orange": 8, "white": 8}
         self.timers = {}
 
     # Add a method to update the position of draggable pieces
     def update_draggable_pieces(self):
         self.start_timer("update_draggable_pieces")
+        moving_phase = True
         for player_pieces in self.pieces.values():
             empty_slot = True
             for piece in player_pieces:
                 piece.update_position()
-                if (
-                    piece.piece.node.str_repr == INITIAL_POSITIONS[piece.piece.player]
-                    or piece.dragging
-                ):
+                if piece.first_move:
                     empty_slot = False
             if empty_slot and self.available_pieces[player_pieces[0].piece.player] > 0:
-                self.pieces[player_pieces[0].piece.player].append(
-                    DraggablePiece(Piece(player_pieces[0].piece.player))
-                )
+                self.pieces[player_pieces[0].piece.player].append(DraggablePiece(Piece(player_pieces[0].piece.player), interactable=player_pieces[0].interactable, id = self.sid))
+                self.sid += 1
                 self.available_pieces[player_pieces[0].piece.player] -= 1
-                if (
-                    self.available_pieces["orange"] == 0
-                    and self.available_pieces["white"] == 0
-                ):
-                    self.phase = "moving"
+            
+            if any(piece.first_move for piece in player_pieces):
+                moving_phase = False
+
+        
+        if moving_phase and self.phase == "placing":
+            self.phase = "moving"
+            print("Moving phase started")
         self.end_timer("update_draggable_pieces")
 
     def start_timer(self, key):
@@ -52,30 +56,18 @@ class Board:
         # print(f"Time taken for {key}: {elapsed_time} seconds")
 
     def __repr__(self):
-        return "\n".join("".join(str(cell) for cell in row) for row in self.cells)
-
+        return f"Board(turn={self.turn}, phase={self.phase})"
     def add_piece(self, piece: Piece):
         self.pieces[piece.player].append(piece)
 
-    @classmethod
-    def from_repr(cls, repr):
-        cells = [[int(cell) for cell in row] for row in repr.split("\n")]
-        return cls(cells)
-
     def game_over(self):
-        return (
-            self.available_pieces["orange"] == 0
-            and self.available_pieces["white"] == 0
-            and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
-        )
+        return self.available_pieces["orange"] == 0 and self.available_pieces["white"] == 0 and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
 
     def draw(self, screen, cell_size: int, margin: int):
         self.start_timer("draw")
         # Load background image
         background = pygame.image.load("assets/background.jpg")
-        background = pygame.transform.scale(
-            background, (screen.get_width(), screen.get_height())
-        )
+        background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
         screen.blit(background, (0, 0))
 
         # Draw edges, legal nodes, numbers, and letters
@@ -144,25 +136,17 @@ class Board:
         for i in range(7):
             number = str(i)
             text = pygame.font.Font(None, 48).render(number, True, (255, 255, 255))
-            screen.blit(
-                text, (3 * margin // 4, (6 - i) * cell_size + cell_size // 2 - 10)
-            )
+            screen.blit(text, (3 * margin // 4, (6 - i) * cell_size + cell_size // 2 - 10))
 
         # Draw letters at the bottom with bigger and white font
         for i, letter in enumerate("ABCDEFG"):
             text = pygame.font.Font(None, 48).render(letter, True, (255, 255, 255))
-            screen.blit(
-                text, (i * cell_size + cell_size // 2 + margin - 10, 7 * cell_size)
-            )
+            screen.blit(text, (i * cell_size + cell_size // 2 + margin - 10, 7 * cell_size))
 
         # Display score and turn with smaller font and appropriate colors
         score_text = f"Orange: {8 - self.available_pieces['orange']}  White: {8 - self.available_pieces['white']}"
-        score_display = pygame.font.Font(None, 36).render(
-            score_text, True, (255, 255, 255)
-        )
-        screen.blit(
-            score_display, (screen.get_width() - score_display.get_width() - 10, 10)
-        )
+        score_display = pygame.font.Font(None, 36).render(score_text, True, (255, 255, 255))
+        screen.blit(score_display, (screen.get_width() - score_display.get_width() - 10, 10))
 
         turn_text = f"Turn: {self.turn.capitalize()}"
         player_color = (255, 255, 255) if self.turn == "white" else (255, 165, 0)
@@ -190,9 +174,7 @@ class Board:
         # Check if the game is over and display game over screen
         if self.game_over():
             winner = "Orange" if self.turn == "white" else "White"
-            game_over_text = pygame.font.Font(None, 72).render(
-                "Game Over " + winner + " wins!", True, (255, 255, 255)
-            )
+            game_over_text = pygame.font.Font(None, 72).render("Game Over " + winner + " wins!", True, (255, 255, 255))
             screen.blit(
                 game_over_text,
                 (
