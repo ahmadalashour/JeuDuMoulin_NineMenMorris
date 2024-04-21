@@ -56,5 +56,4 @@ if __name__ == "__main__":
         # Redraw the board
         board.draw(screen, cell_size, margin)
 
-
     pygame.quit()

@@ -63,8 +63,12 @@ class Board:
         return cls(cells)
 
     def game_over(self):
-        return self.available_pieces["orange"] == 0 and self.available_pieces["white"] == 0 and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
-    
+        return (
+            self.available_pieces["orange"] == 0
+            and self.available_pieces["white"] == 0
+            and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
+        )
+
     def draw(self, screen, cell_size: int, margin: int):
         self.start_timer("draw")
         # Load background image
@@ -148,7 +152,7 @@ class Board:
         for i, letter in enumerate("ABCDEFG"):
             text = pygame.font.Font(None, 48).render(letter, True, (255, 255, 255))
             screen.blit(
-                text, (i * cell_size + cell_size // 2 + margin - 10, 7 * cell_size )
+                text, (i * cell_size + cell_size // 2 + margin - 10, 7 * cell_size)
             )
 
         # Display score and turn with smaller font and appropriate colors
@@ -186,7 +190,9 @@ class Board:
         # Check if the game is over and display game over screen
         if self.game_over():
             winner = "Orange" if self.turn == "white" else "White"
-            game_over_text = pygame.font.Font(None, 72).render("Game Over "+ winner + " wins!", True, (255, 255, 255))
+            game_over_text = pygame.font.Font(None, 72).render(
+                "Game Over " + winner + " wins!", True, (255, 255, 255)
+            )
             screen.blit(
                 game_over_text,
                 (
