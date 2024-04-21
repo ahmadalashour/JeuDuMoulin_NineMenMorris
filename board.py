@@ -12,14 +12,15 @@ class Board:
     phase: Literal["placing", "moving", "capturing"] = "placing"
     interactables: list[str] = None
     sid: int = 0
+
     def __init__(self, interactables: list[str] = None):
         self.interactables = interactables or []
         self.pieces = {
-            "orange": [DraggablePiece(Piece("orange"),interactable="orange" in self.interactables, id = self.sid)],
-            "white": [DraggablePiece(Piece("white"),interactable="white" in self.interactables, id = self.sid + 1)],
+            "orange": [DraggablePiece(Piece("orange"), interactable="orange" in self.interactables, id=self.sid)],
+            "white": [DraggablePiece(Piece("white"), interactable="white" in self.interactables, id=self.sid + 1)],
         }
         self.sid += 2
-        
+
         self.available_pieces = {"orange": 8, "white": 8}
         self.timers = {}
 
@@ -34,14 +35,13 @@ class Board:
                 if piece.first_move:
                     empty_slot = False
             if empty_slot and self.available_pieces[player_pieces[0].piece.player] > 0:
-                self.pieces[player_pieces[0].piece.player].append(DraggablePiece(Piece(player_pieces[0].piece.player), interactable=player_pieces[0].interactable, id = self.sid))
+                self.pieces[player_pieces[0].piece.player].append(DraggablePiece(Piece(player_pieces[0].piece.player), interactable=player_pieces[0].interactable, id=self.sid))
                 self.sid += 1
                 self.available_pieces[player_pieces[0].piece.player] -= 1
-            
+
             if any(piece.first_move for piece in player_pieces):
                 moving_phase = False
 
-        
         if moving_phase and self.phase == "placing":
             self.phase = "moving"
             print("Moving phase started")
@@ -57,6 +57,7 @@ class Board:
 
     def __repr__(self):
         return f"Board(turn={self.turn}, phase={self.phase})"
+
     def add_piece(self, piece: Piece):
         self.pieces[piece.player].append(piece)
 

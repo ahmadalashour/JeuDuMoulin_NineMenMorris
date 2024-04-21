@@ -105,10 +105,10 @@ class DraggablePiece:
 
     def __lt__(self, other):
         return self.id < other.id
-    
+
     def __eq__(self, other):
         return self.id == other.id
-    
+
     def __repr__(self) -> str:
         return f"{self.piece.player} piece at {self.piece.node} with id {self.id}"
 
@@ -148,17 +148,17 @@ class DraggablePiece:
                                     if potential_third_node in player_controlled_nodes and potential_third_node != self.starting_node and potential_third_node != other_node:
                                         potential_third_piece = [piece for piece in board.pieces[self.piece.player] if piece.piece.node == potential_third_node][0]
                                         if new_node.x == other_node.x == potential_third_node.x or new_node.y == other_node.y == potential_third_node.y:
-                                                new_mill = [
-                                                    self,
-                                                    other_piece,
-                                                    potential_third_piece,
-                                                ]
-                                                # Sort the mill
-                                                new_mill.sort()
-                                                if new_mill not in board.formed_mills or len(board.pieces[board.turn]) == 3:
-                                                    if not just_check:
-                                                        print(f"Formed mill: {new_mill}")
-                                                        board.formed_mills.append(new_mill)
-                                                    return "remove"
+                                            new_mill = [
+                                                self,
+                                                other_piece,
+                                                potential_third_piece,
+                                            ]
+                                            # Sort the mill
+                                            new_mill.sort()
+                                            if new_mill not in board.formed_mills or len(board.pieces[board.turn]) == 3:
+                                                if not just_check:
+                                                    print(f"Formed mill: {new_mill}")
+                                                    board.formed_mills.append(new_mill)
+                                                return "remove"
 
         return "move"

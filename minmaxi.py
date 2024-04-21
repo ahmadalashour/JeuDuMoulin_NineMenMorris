@@ -37,7 +37,7 @@ if __name__ == "__main__":
     latest_phase = board.phase
 
     while True:
-    
+
         board.update_draggable_pieces()
         board.draw(screen, CELL_SIZE, MARGIN)
 

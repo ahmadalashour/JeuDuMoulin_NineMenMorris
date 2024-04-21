@@ -8,7 +8,7 @@ if __name__ == "__main__":
     cell_size = CELL_SIZE
     margin = MARGIN
     screen = pygame.display.set_mode((7 * cell_size + margin * 5, 7 * cell_size + margin))
-    board = Board(interactables = ["white", "orange"])
+    board = Board(interactables=["white", "orange"])
 
     running = True
     remove_piece = False
