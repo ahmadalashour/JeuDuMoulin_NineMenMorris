@@ -5,6 +5,7 @@ import dataclasses as dc
 from globals import INITIAL_POSITIONS, ICONS, NODES, EDGES, CELL_SIZE, MARGIN, Action
 from pygame.locals import MOUSEBUTTONDOWN, MOUSEBUTTONUP
 from typing import TYPE_CHECKING
+from copy import deepcopy
 
 if TYPE_CHECKING:
     from board import Board
@@ -36,26 +37,33 @@ class DraggablePiece:
     cell_size: int = CELL_SIZE
     margin: int = MARGIN
 
-    def __post_init__(self):
-        print(
-            f"Created piece {self.id} for {self.piece.player} at state {self.first_move}"
+    def copy_ai(self):
+        return DraggablePiece(
+            piece=deepcopy(self.piece),
+            id=self.id,
+            interactable=False,
+            first_move=self.first_move,
         )
 
-    def handle_remove_event(self, event: pygame.event.Event) -> bool:
-        if self.first_move:
-            return False
-        if event.type == MOUSEBUTTONDOWN:
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            piece_x = self.piece.node.x * self.cell_size + self.margin # type: ignore
-            piece_y = self.piece.node.y * self.cell_size # type: ignore
-            piece_rect = self.piece.surface(self.cell_size).get_rect(
-                topleft=(piece_x, piece_y)
-            )
-            if piece_rect.collidepoint(mouse_x, mouse_y):
-                return True
+    def handle_remove_event(self, event: pygame.event.Event, board: "Board") -> bool:
+        if not self.first_move:
+            if event.type == MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                piece_x = self.piece.node.x * self.cell_size + self.margin  # type: ignore
+                piece_y = self.piece.node.y * self.cell_size  # type: ignore
+                piece_rect = self.piece.surface(self.cell_size).get_rect(
+                    topleft=(piece_x, piece_y)
+                )
+                if piece_rect.collidepoint(mouse_x, mouse_y):
+                    for x, y, z in board.formed_mills:
+                        if self == x or self == y or self == z:
+                            board.formed_mills.remove([x, y, z])
+                    return True
         return False
 
     def handle_event(self, event: pygame.event.Event, board: "Board"):
+        if not self.interactable:
+            return
         if (board.phase == "placing" and self.first_move) or board.phase == "moving":
             if not self.dragging:
                 self.starting_node = self.piece.node
@@ -65,8 +73,8 @@ class DraggablePiece:
 
             if event.type == MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-                piece_x = self.piece.node.x * self.cell_size + self.margin # type: ignore
-                piece_y = self.piece.node.y * self.cell_size # type: ignore
+                piece_x = self.piece.node.x * self.cell_size + self.margin  # type: ignore
+                piece_y = self.piece.node.y * self.cell_size  # type: ignore
                 piece_rect = self.piece.surface(self.cell_size).get_rect(
                     topleft=(piece_x, piece_y)
                 )
@@ -120,7 +128,7 @@ class DraggablePiece:
         return self.id == other.id
 
     def __repr__(self) -> str:
-        return f"{self.piece.player} piece at {self.piece.node} with id {self.id}"
+        return f"{self.piece.player} piece at {self.piece.node} with id {self.id} and state {self.first_move}"
 
     def check_legal_move(
         self, board: "Board", new_node: Node, just_check: bool = False
@@ -202,6 +210,7 @@ class DraggablePiece:
                                                 other_piece,
                                                 potential_third_piece,
                                             ]
+
                                             # Sort the mill
                                             new_mill.sort()
                                             if (
@@ -209,7 +218,6 @@ class DraggablePiece:
                                                 or len(board.pieces[board.turn]) == 3
                                             ):
                                                 if not just_check:
-                                                    print(f"Formed mill: {new_mill}")
                                                     board.formed_mills.append(new_mill)
                                                 return "remove"
 

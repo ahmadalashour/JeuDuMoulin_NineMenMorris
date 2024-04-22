@@ -5,16 +5,15 @@ from typing import Literal
 from piece import DraggablePiece, Piece
 from globals import EDGES, NODES, Turn
 
-
 class Board:
     formed_mills = []
     turn: Turn = "orange"
     phase: Literal["placing", "moving", "capturing"] = "placing"
     latest_phase: Literal["placing", "moving", "capturing"] = "placing"
-    interactables: list[str] | None = None
+    interactables:  list[Literal["orange", "white"]] | None = None
     sid: int = 0
 
-    def __init__(self, interactables: list[str] | None = None):
+    def __init__(self, interactables:  list[Literal["orange", "white"]] | None = None):
         self.interactables = interactables or []
         self.pieces = {
             "orange": [
@@ -37,18 +36,37 @@ class Board:
         self.available_pieces = {"orange": 8, "white": 8}
         self.timers = {}
 
-    def copy(self):
-        new_board = Board(self.interactables)
+    def ai_copy(self):
+        new_board = Board([])
         new_board.pieces = {
-            player: [piece for piece in self.pieces[player]]
+            player: [piece.copy_ai() for piece in self.pieces[player]]
             for player in self.pieces
         }
+
         new_board.available_pieces = {
             player: self.available_pieces[player] for player in self.available_pieces
         }
         new_board.turn = self.turn
         new_board.phase = self.phase
         new_board.sid = self.sid
+
+        new_board.formed_mills = []
+
+        for a, b, c in self.formed_mills:
+            try:
+                a_corr = [p for p in new_board.pieces[a.piece.player] if p.id == a.id][
+                    0
+                ]
+                b_corr = [p for p in new_board.pieces[b.piece.player] if p.id == b.id][
+                    0
+                ]
+                c_corr = [p for p in new_board.pieces[c.piece.player] if p.id == c.id][
+                    0
+                ]
+                new_board.formed_mills.append([a_corr, b_corr, c_corr])
+            except:
+                pass
+
         return new_board
 
     # Add a method to update the position of draggable pieces
@@ -77,7 +95,6 @@ class Board:
 
         if moving_phase and self.phase == "placing":
             self.phase = "moving"
-            print("Moving phase started")
         self.end_timer("update_draggable_pieces")
 
     def start_timer(self, key):

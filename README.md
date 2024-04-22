@@ -10,6 +10,5 @@ The game is played by two players. The players take turns to place their pieces 
 To run the game, simply run the file `main.py` in a Python environment. The game will start and you can play by following the instructions on the screen.
 
 ## TODO: 
-- Implement an algorithm to play against the computer with multiple levels of difficulty, use the minimax algorithm with alpha-beta pruning. 
 - Implement a graphical main menu
 - Test all functionalities
