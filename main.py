@@ -7,7 +7,9 @@ if __name__ == "__main__":
     pygame.init()
     cell_size = CELL_SIZE
     margin = MARGIN
-    screen = pygame.display.set_mode((7 * cell_size + margin * 5, 7 * cell_size + margin))
+    screen = pygame.display.set_mode(
+        (7 * cell_size + margin * 5, 7 * cell_size + margin)
+    )
     board = Board(interactables=["white", "orange"])
 
     running = True

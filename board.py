@@ -3,26 +3,53 @@ import pygame
 import time
 from typing import Literal
 from piece import DraggablePiece, Piece
-from globals import EDGES, NODES, Turn, INITIAL_POSITIONS
+from globals import EDGES, NODES, Turn
 
 
 class Board:
     formed_mills = []
     turn: Turn = "orange"
     phase: Literal["placing", "moving", "capturing"] = "placing"
-    interactables: list[str] = None
+    latest_phase: Literal["placing", "moving", "capturing"] = "placing"
+    interactables: list[str] | None = None
     sid: int = 0
 
-    def __init__(self, interactables: list[str] = None):
+    def __init__(self, interactables: list[str] | None = None):
         self.interactables = interactables or []
         self.pieces = {
-            "orange": [DraggablePiece(Piece("orange"), interactable="orange" in self.interactables, id=self.sid)],
-            "white": [DraggablePiece(Piece("white"), interactable="white" in self.interactables, id=self.sid + 1)],
+            "orange": [
+                DraggablePiece(
+                    Piece("orange"),
+                    interactable="orange" in self.interactables,
+                    id=self.sid,
+                )
+            ],
+            "white": [
+                DraggablePiece(
+                    Piece("white"),
+                    interactable="white" in self.interactables,
+                    id=self.sid + 1,
+                )
+            ],
         }
         self.sid += 2
 
         self.available_pieces = {"orange": 8, "white": 8}
         self.timers = {}
+
+    def copy(self):
+        new_board = Board(self.interactables)
+        new_board.pieces = {
+            player: [piece for piece in self.pieces[player]]
+            for player in self.pieces
+        }
+        new_board.available_pieces = {
+            player: self.available_pieces[player] for player in self.available_pieces
+        }
+        new_board.turn = self.turn
+        new_board.phase = self.phase
+        new_board.sid = self.sid
+        return new_board
 
     # Add a method to update the position of draggable pieces
     def update_draggable_pieces(self):
@@ -35,7 +62,13 @@ class Board:
                 if piece.first_move:
                     empty_slot = False
             if empty_slot and self.available_pieces[player_pieces[0].piece.player] > 0:
-                self.pieces[player_pieces[0].piece.player].append(DraggablePiece(Piece(player_pieces[0].piece.player), interactable=player_pieces[0].interactable, id=self.sid))
+                self.pieces[player_pieces[0].piece.player].append(
+                    DraggablePiece(
+                        Piece(player_pieces[0].piece.player),
+                        interactable=player_pieces[0].interactable,
+                        id=self.sid,
+                    )
+                )
                 self.sid += 1
                 self.available_pieces[player_pieces[0].piece.player] -= 1
 
@@ -51,24 +84,31 @@ class Board:
         self.timers[key] = time.time()
 
     def end_timer(self, key):
-        elapsed_time = time.time() - self.timers[key]
+        pass
+        # time.time() - self.timers[key]
         # uncomment to display times
         # print(f"Time taken for {key}: {elapsed_time} seconds")
 
     def __repr__(self):
         return f"Board(turn={self.turn}, phase={self.phase})"
 
-    def add_piece(self, piece: Piece):
-        self.pieces[piece.player].append(piece)
+    def add_piece(self, piece: DraggablePiece):
+        self.pieces[piece.piece.player].append(piece)
 
     def game_over(self):
-        return self.available_pieces["orange"] == 0 and self.available_pieces["white"] == 0 and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
+        return (
+            self.available_pieces["orange"] == 0
+            and self.available_pieces["white"] == 0
+            and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
+        )
 
     def draw(self, screen, cell_size: int, margin: int):
         self.start_timer("draw")
         # Load background image
         background = pygame.image.load("assets/background.jpg")
-        background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
+        background = pygame.transform.scale(
+            background, (screen.get_width(), screen.get_height())
+        )
         screen.blit(background, (0, 0))
 
         # Draw edges, legal nodes, numbers, and letters
@@ -137,17 +177,25 @@ class Board:
         for i in range(7):
             number = str(i)
             text = pygame.font.Font(None, 48).render(number, True, (255, 255, 255))
-            screen.blit(text, (3 * margin // 4, (6 - i) * cell_size + cell_size // 2 - 10))
+            screen.blit(
+                text, (3 * margin // 4, (6 - i) * cell_size + cell_size // 2 - 10)
+            )
 
         # Draw letters at the bottom with bigger and white font
         for i, letter in enumerate("ABCDEFG"):
             text = pygame.font.Font(None, 48).render(letter, True, (255, 255, 255))
-            screen.blit(text, (i * cell_size + cell_size // 2 + margin - 10, 7 * cell_size))
+            screen.blit(
+                text, (i * cell_size + cell_size // 2 + margin - 10, 7 * cell_size)
+            )
 
         # Display score and turn with smaller font and appropriate colors
         score_text = f"Orange: {8 - self.available_pieces['orange']}  White: {8 - self.available_pieces['white']}"
-        score_display = pygame.font.Font(None, 36).render(score_text, True, (255, 255, 255))
-        screen.blit(score_display, (screen.get_width() - score_display.get_width() - 10, 10))
+        score_display = pygame.font.Font(None, 36).render(
+            score_text, True, (255, 255, 255)
+        )
+        screen.blit(
+            score_display, (screen.get_width() - score_display.get_width() - 10, 10)
+        )
 
         turn_text = f"Turn: {self.turn.capitalize()}"
         player_color = (255, 255, 255) if self.turn == "white" else (255, 165, 0)
@@ -175,7 +223,9 @@ class Board:
         # Check if the game is over and display game over screen
         if self.game_over():
             winner = "Orange" if self.turn == "white" else "White"
-            game_over_text = pygame.font.Font(None, 72).render("Game Over " + winner + " wins!", True, (255, 255, 255))
+            game_over_text = pygame.font.Font(None, 72).render(
+                "Game Over " + winner + " wins!", True, (255, 255, 255)
+            )
             screen.blit(
                 game_over_text,
                 (

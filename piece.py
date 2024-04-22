@@ -1,5 +1,4 @@
 from node import Node
-from pathlib import Path
 import pygame
 import numpy as np
 import dataclasses as dc
@@ -38,23 +37,26 @@ class DraggablePiece:
     margin: int = MARGIN
 
     def __post_init__(self):
-        print(f"Created piece {self.id} for {self.piece.player} at state {self.first_move}")
+        print(
+            f"Created piece {self.id} for {self.piece.player} at state {self.first_move}"
+        )
 
     def handle_remove_event(self, event: pygame.event.Event) -> bool:
         if self.first_move:
             return False
         if event.type == MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            piece_x = self.piece.node.x * self.cell_size + self.margin
-            piece_y = self.piece.node.y * self.cell_size
-            piece_rect = self.piece.surface(self.cell_size).get_rect(topleft=(piece_x, piece_y))
+            piece_x = self.piece.node.x * self.cell_size + self.margin # type: ignore
+            piece_y = self.piece.node.y * self.cell_size # type: ignore
+            piece_rect = self.piece.surface(self.cell_size).get_rect(
+                topleft=(piece_x, piece_y)
+            )
             if piece_rect.collidepoint(mouse_x, mouse_y):
                 return True
         return False
 
     def handle_event(self, event: pygame.event.Event, board: "Board"):
         if (board.phase == "placing" and self.first_move) or board.phase == "moving":
-
             if not self.dragging:
                 self.starting_node = self.piece.node
 
@@ -63,9 +65,11 @@ class DraggablePiece:
 
             if event.type == MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-                piece_x = self.piece.node.x * self.cell_size + self.margin
-                piece_y = self.piece.node.y * self.cell_size
-                piece_rect = self.piece.surface(self.cell_size).get_rect(topleft=(piece_x, piece_y))
+                piece_x = self.piece.node.x * self.cell_size + self.margin # type: ignore
+                piece_y = self.piece.node.y * self.cell_size # type: ignore
+                piece_rect = self.piece.surface(self.cell_size).get_rect(
+                    topleft=(piece_x, piece_y)
+                )
                 if piece_rect.collidepoint(mouse_x, mouse_y):
                     self.dragging = True
 
@@ -73,12 +77,18 @@ class DraggablePiece:
                 self.dragging = False
                 # Snap the piece to the nearest grid cell if dropped outside
                 x_index = np.clip(
-                    round((pygame.mouse.get_pos()[0] - self.margin - self.cell_size // 2) / self.cell_size),
+                    round(
+                        (pygame.mouse.get_pos()[0] - self.margin - self.cell_size // 2)
+                        / self.cell_size
+                    ),
                     0,
                     6,
                 )
                 y_index = np.clip(
-                    round((pygame.mouse.get_pos()[1] - self.cell_size // 2) / self.cell_size),
+                    round(
+                        (pygame.mouse.get_pos()[1] - self.cell_size // 2)
+                        / self.cell_size
+                    ),
                     0,
                     6,
                 )
@@ -112,7 +122,9 @@ class DraggablePiece:
     def __repr__(self) -> str:
         return f"{self.piece.player} piece at {self.piece.node} with id {self.id}"
 
-    def check_legal_move(self, board: "Board", new_node: Node, just_check: bool = False) -> Action:
+    def check_legal_move(
+        self, board: "Board", new_node: Node, just_check: bool = False
+    ) -> Action:
         if not self.interactable:
             self.starting_node = self.piece.node
 
@@ -129,25 +141,62 @@ class DraggablePiece:
         if node_occupied:
             return "undo"
         else:
-            player_controlled_nodes = [piece.piece.node for piece in board.pieces[self.piece.player]]
+            player_controlled_nodes = [
+                piece.piece.node for piece in board.pieces[self.piece.player]
+            ]
 
             # Check if edge is legal
-            if not self.first_move and len(player_controlled_nodes) > 3 and (self.starting_node, new_node) not in EDGES and (new_node, self.starting_node) not in EDGES:
+            if (
+                not self.first_move
+                and len(player_controlled_nodes) > 3
+                and (self.starting_node, new_node) not in EDGES
+                and (new_node, self.starting_node) not in EDGES
+            ):
                 return "undo"
 
             # Check if 3 are adjacent and in a row or column
             for edge in EDGES:
                 if edge[0] == new_node or edge[1] == new_node:
                     other_node = edge[0] if edge[1] == new_node else edge[1]
-                    if other_node in player_controlled_nodes and other_node != self.starting_node:
-                        other_piece = [piece for piece in board.pieces[self.piece.player] if piece.piece.node == other_node][0]
+                    if (
+                        other_node in player_controlled_nodes
+                        and other_node != self.starting_node
+                    ):
+                        other_piece = [
+                            piece
+                            for piece in board.pieces[self.piece.player]
+                            if piece.piece.node == other_node
+                        ][0]
                         for potential_mill_edge in EDGES:
                             if potential_mill_edge != edge:
-                                if potential_mill_edge[0] in [new_node, other_node] or potential_mill_edge[1] in [new_node, other_node]:
-                                    potential_third_node = potential_mill_edge[0] if potential_mill_edge[1] in [new_node, other_node] else potential_mill_edge[1]
-                                    if potential_third_node in player_controlled_nodes and potential_third_node != self.starting_node and potential_third_node != other_node:
-                                        potential_third_piece = [piece for piece in board.pieces[self.piece.player] if piece.piece.node == potential_third_node][0]
-                                        if new_node.x == other_node.x == potential_third_node.x or new_node.y == other_node.y == potential_third_node.y:
+                                if potential_mill_edge[0] in [
+                                    new_node,
+                                    other_node,
+                                ] or potential_mill_edge[1] in [new_node, other_node]:
+                                    potential_third_node = (
+                                        potential_mill_edge[0]
+                                        if potential_mill_edge[1]
+                                        in [new_node, other_node]
+                                        else potential_mill_edge[1]
+                                    )
+                                    if (
+                                        potential_third_node in player_controlled_nodes
+                                        and potential_third_node != self.starting_node
+                                        and potential_third_node != other_node
+                                    ):
+                                        potential_third_piece = [
+                                            piece
+                                            for piece in board.pieces[self.piece.player]
+                                            if piece.piece.node == potential_third_node
+                                        ][0]
+                                        if (
+                                            new_node.x
+                                            == other_node.x
+                                            == potential_third_node.x
+                                            or new_node.y
+                                            == other_node.y
+                                            == potential_third_node.y
+                                        ):
                                             new_mill = [
                                                 self,
                                                 other_piece,
@@ -155,7 +204,10 @@ class DraggablePiece:
                                             ]
                                             # Sort the mill
                                             new_mill.sort()
-                                            if new_mill not in board.formed_mills or len(board.pieces[board.turn]) == 3:
+                                            if (
+                                                new_mill not in board.formed_mills
+                                                or len(board.pieces[board.turn]) == 3
+                                            ):
                                                 if not just_check:
                                                     print(f"Formed mill: {new_mill}")
                                                     board.formed_mills.append(new_mill)
