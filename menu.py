@@ -19,7 +19,7 @@ pygame.init()
 window_width = 800
 window_height = 600
 window_surface = pygame.display.set_mode((window_width, window_height))
-pygame.display.set_caption("Game Menu")
+pygame.display.set_caption("Jeu Du Moulin")
 
 # Load background image
 background_image = pygame.image.load("assets/menubackground.jpg")

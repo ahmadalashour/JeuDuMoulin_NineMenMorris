@@ -1,5 +1,9 @@
 # Nine men's morris
-![plot](./assets/image.png)
+<center>
+<img src="./assets/main_menu.png" alt="menu" width="500">
+<img src="./assets/image.png" alt="main" width="500">
+</center>
+
 ## Description
 This is a simple implementation of the game Nine men's morris. The game is played on a board with 24 points and 18 pieces for each player. The goal of the game is to form a mill (three pieces in a row) and remove one of the opponent's pieces. The game is divided into three phases: placing pieces, moving pieces and flying pieces. The game is won by reducing the opponent to two pieces or by blocking the opponent's pieces so that they cannot move.
 
