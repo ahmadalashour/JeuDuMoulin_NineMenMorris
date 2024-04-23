@@ -1,5 +1,5 @@
 from pathlib import Path
-from node import Node
+from src.env.node import Node
 from typing import Literal
 from collections import defaultdict
 
@@ -87,7 +87,7 @@ for edge in EDGES:
 TRAINING_PARAMETERS = dict(
     # Global variables
     RENDER=True,
-    INTERACTABLES=["orange"],
+    INTERACTABLES=[],
     DIFFICULTY=5,
     STUPIDITY=0.0,
     USE_SPARSITY=False,

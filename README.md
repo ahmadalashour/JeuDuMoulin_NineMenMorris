@@ -11,7 +11,7 @@ This is a simple implementation of the game Nine men's morris. The game is playe
 The game is played by two players. The players take turns to place their pieces on the board. Once all pieces have been placed, the players take turns to move their pieces. If a player forms a mill, they can remove one of the opponent's pieces. Once a player has only three pieces left, they can move their pieces to any empty point on the board. The game is won by reducing the opponent to two pieces or by blocking the opponent's pieces so that they cannot move.
 
 ## How to run
-To run the game, simply run the file `menu.py` in a Python environment. The game will start and you can play by following the instructions on the screen.
+To run the game, simply run the file `main.py` in a Python environment. The game will start and you can play by following the instructions on the screen.
 
 ### Choosing Difficulty
     The Game uses Minimax algorithm to determine the best move for the AI, Alpha-Beta pruning is also used to optimize the algorithm. Select the Depth of search by choosing difficulty (1-2 for easy, 3-4 for medium, 5-6 for hard, 7+ for very hard). Note that higher depth will take longer to compute. 
