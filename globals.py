@@ -1,6 +1,7 @@
 from pathlib import Path
 from node import Node
 from typing import Literal
+from collections import defaultdict
 
 ICONS = {
     "orange": Path("assets/orangeplayer.png"),
@@ -76,3 +77,9 @@ EDGES = [
     (Node("g0"), Node("g3")),
     (Node("g3"), Node("g6")),
 ]
+
+# Create a lookup table
+NODE_LOOKUP = defaultdict(list)
+for edge in EDGES:
+    NODE_LOOKUP[edge[0]].append(edge[1])
+    NODE_LOOKUP[edge[1]].append(edge[0])

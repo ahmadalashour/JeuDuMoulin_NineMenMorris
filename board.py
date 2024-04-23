@@ -1,31 +1,37 @@
 # This is a base class for the board of the game (Nine men's Moris ). It is a 2D array of cells.
 import pygame
 import time
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 from piece import DraggablePiece, Piece
+
+if TYPE_CHECKING:
+    from node import Node
 from globals import EDGES, NODES, Turn
+
 
 class Board:
     formed_mills = []
     turn: Turn = "orange"
     phase: Literal["placing", "moving", "capturing"] = "placing"
     latest_phase: Literal["placing", "moving", "capturing"] = "placing"
-    interactables:  list[Literal["orange", "white"]] | None = None
+    interactables: list[Literal["orange", "white"]] | None = None
+    available_nodes: list["Node"] = NODES.copy()
+    winner: Literal["orange", "white"] | None = None
     sid: int = 0
 
-    def __init__(self, interactables:  list[Literal["orange", "white"]] | None = None):
+    def __init__(self, interactables: list[Literal["orange", "white"]] | None = None):
         self.interactables = interactables or []
         self.pieces = {
             "orange": [
                 DraggablePiece(
-                    Piece("orange"),
+                    Piece("orange", None),  # type: ignore
                     interactable="orange" in self.interactables,
                     id=self.sid,
                 )
             ],
             "white": [
                 DraggablePiece(
-                    Piece("white"),
+                    Piece("white", None),  # type: ignore
                     interactable="white" in self.interactables,
                     id=self.sid + 1,
                 )
@@ -67,6 +73,7 @@ class Board:
             except:
                 pass
 
+        new_board.available_nodes = self.available_nodes.copy()
         return new_board
 
     # Add a method to update the position of draggable pieces
@@ -82,7 +89,7 @@ class Board:
             if empty_slot and self.available_pieces[player_pieces[0].piece.player] > 0:
                 self.pieces[player_pieces[0].piece.player].append(
                     DraggablePiece(
-                        Piece(player_pieces[0].piece.player),
+                        Piece(player_pieces[0].piece.player, None),  # type: ignore
                         interactable=player_pieces[0].interactable,
                         id=self.sid,
                     )
@@ -112,7 +119,11 @@ class Board:
     def add_piece(self, piece: DraggablePiece):
         self.pieces[piece.piece.player].append(piece)
 
+    @property
     def game_over(self):
+        return self.winner is not None or self.check_game_over()
+
+    def check_game_over(self):
         return (
             self.available_pieces["orange"] == 0
             and self.available_pieces["white"] == 0
@@ -238,8 +249,8 @@ class Board:
         )
 
         # Check if the game is over and display game over screen
-        if self.game_over():
-            winner = "Orange" if self.turn == "white" else "White"
+        if self.game_over:
+            winner = self.winner or ("Orange" if self.turn == "white" else "White")
             game_over_text = pygame.font.Font(None, 72).render(
                 "Game Over " + winner + " wins!", True, (255, 255, 255)
             )
@@ -250,7 +261,22 @@ class Board:
                     screen.get_height() // 2 - game_over_text.get_height() // 2,
                 ),
             )
-
+        # Display "Thinking" next to non-interactable pieces during their turn
+        for player in self.pieces:
+            if player not in self.interactables and self.turn == player:  # type: ignore
+                thinking_text = pygame.font.Font(None, 24).render(
+                    "Thinking", True, (255, 255, 255)
+                )
+                # display text to right of the screen, up if white, down if orange
+                screen.blit(
+                    thinking_text,
+                    (
+                        screen.get_width() - thinking_text.get_width() - 10,
+                        screen.get_height() - 2 * margin
+                        if player == "orange"
+                        else 2 * margin,
+                    ),
+                )
         # Update the display
         pygame.display.flip()
         self.end_timer("draw")

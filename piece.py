@@ -4,7 +4,7 @@ import numpy as np
 import dataclasses as dc
 from globals import INITIAL_POSITIONS, ICONS, NODES, EDGES, CELL_SIZE, MARGIN, Action
 from pygame.locals import MOUSEBUTTONDOWN, MOUSEBUTTONUP
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from copy import deepcopy
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 @dc.dataclass
 class Piece:
     player: str
-    node: Node | None = None
+    node: Node
 
     def __post_init__(self):
         if not self.node:
@@ -33,7 +33,7 @@ class DraggablePiece:
     first_move: bool = True
 
     dragging: bool = False
-    starting_node: Node | None = None
+    starting_node: Optional[Node] = None
     cell_size: int = CELL_SIZE
     margin: int = MARGIN
 
@@ -109,9 +109,12 @@ class DraggablePiece:
             self.piece.node = new_node
             if self.first_move:
                 self.first_move = False
+            board.available_nodes.remove(new_node)
+            if self.starting_node in NODES:
+                board.available_nodes.append(self.starting_node)
             return legality
         else:
-            self.piece.node = self.starting_node
+            self.piece.node = self.starting_node  # type: ignore
             return "undo"
 
     def update_position(self):

@@ -1,13 +1,20 @@
 import pygame
 from board import Board
-from globals import CELL_SIZE, MARGIN, NODES
+from globals import CELL_SIZE, MARGIN, NODES, NODE_LOOKUP
 from typing import TYPE_CHECKING, Literal
+import numpy as np
+
 if TYPE_CHECKING:
     from node import Node
 
-RENDER = True # Choose to view the gameplay
-INTERACTABLES : list[Literal["orange", "white"]] = ["orange"]
-DIFFICULTY = 3
+RENDER = True  # Choose to view the gameplay
+INTERACTABLES: list[Literal["orange", "white"]] = [
+    "orange"
+]  # Choose which player to interact with
+DIFFICULTY = 5  # Choose the difficulty level, 1 - 5 # 5 is the hardest and can take up to 20 minutes to make a move
+STUPIDITY = 0.0  # Randomness in AI moves, choose something reasonable like 0 - 2 larger values make AlphaBeta pruning less effective
+USE_SPARSITY = False  # Use sparsity in reward function, set to False for faster moves
+MAX_N_OPERATIONS = 128000  # Maximum number of operations before the game is declared a draw, set to None for no limit
 
 
 def generate_possible_moves(board: Board) -> list[tuple[int | None, "Node", int]]:
@@ -17,7 +24,7 @@ def generate_possible_moves(board: Board) -> list[tuple[int | None, "Node", int]
         piece_to_place = [
             piece for piece in board.pieces[board.turn] if piece.first_move
         ][0]
-        for node in NODES:
+        for node in board.available_nodes:
             legality = piece_to_place.check_legal_move(
                 board=board, new_node=node, just_check=True
             )
@@ -26,7 +33,11 @@ def generate_possible_moves(board: Board) -> list[tuple[int | None, "Node", int]
 
     elif board.phase == "moving":
         for piece in board.pieces[board.turn]:
-            for node in NODES:
+            for node in (
+                NODE_LOOKUP[piece.piece.node]
+                if len(board.pieces[board.turn]) > 3
+                else board.available_nodes
+            ):
                 legality = piece.check_legal_move(
                     board=board, new_node=node, just_check=True
                 )
@@ -37,24 +48,36 @@ def generate_possible_moves(board: Board) -> list[tuple[int | None, "Node", int]
         other_turn = "orange" if board.turn == "white" else "white"
         for piece in board.pieces[other_turn]:
             if not piece.first_move:
-                generated_moves.append((None, piece, "capturing"))
+                generated_moves.append((None, piece.piece.node, "remove"))
 
     return generated_moves
 
 
-def minimax(board: Board, depth, maximizing_player, alpha, beta):
+def minimax(board: Board, depth, alpha, beta):
     board.update_draggable_pieces()
-    if depth == 0 or board.game_over():
+    if depth == 0 or board.game_over:
         return None, evaluate(board)
+
+    maximizing_player = board.turn == "orange"
+
+    possible_moves = generate_possible_moves(board)
+    if MAX_N_OPERATIONS:
+        n_samples = min(
+            len(possible_moves), int(np.exp(np.log(MAX_N_OPERATIONS) / DIFFICULTY))
+        )
+        samples_idx = np.random.choice(len(possible_moves), n_samples, replace=False)
+    possible_moves = [possible_moves[i] for i in samples_idx]
+    if len(possible_moves) == 0:
+        return None, float("-inf") if maximizing_player else float("inf")
 
     if maximizing_player:
         max_value = float("-inf")
         best_move = None
-        for move in generate_possible_moves(board):
+        for move in possible_moves:
             board_copy = board.ai_copy()
             make_move(board_copy, move)
-            _, value = minimax(board_copy, depth - 1, False, alpha, beta)
-            if value > max_value:
+            _, value = minimax(board_copy, depth - 1, alpha, beta)
+            if value > max_value or best_move is None:
                 max_value = value
                 best_move = move
             alpha = max(alpha, max_value)
@@ -64,11 +87,12 @@ def minimax(board: Board, depth, maximizing_player, alpha, beta):
     else:
         min_value = float("inf")
         best_move = None
-        for move in generate_possible_moves(board):
+
+        for move in possible_moves:
             board_copy = board.ai_copy()
             make_move(board_copy, move)
-            _, value = minimax(board_copy, depth - 1, True, alpha, beta)
-            if value < min_value:
+            _, value = minimax(board_copy, depth - 1, alpha, beta)
+            if value < min_value or best_move is None:
                 min_value = value
                 best_move = move
             beta = min(beta, min_value)
@@ -77,13 +101,34 @@ def minimax(board: Board, depth, maximizing_player, alpha, beta):
         return best_move, min_value
 
 
-def evaluate(board):
-    return len(board.pieces[board.turn]) - len(
-        board.pieces["orange" if board.turn == "white" else "white"]
-    )
+def evaluate(board):  # Reward function
+    sparsity_eval = 0
+    if USE_SPARSITY:
+        for player in ["orange", "white"]:
+            for piece in board.pieces[player]:
+                if len(board.pieces[player]) > 3:
+                    availables = [
+                        node
+                        for node in NODE_LOOKUP[piece.piece.node]
+                        if node in board.available_nodes
+                    ]
+                    sparsity_eval += (
+                        len(availables) if player == "orange" else -len(availables)
+                    )
+
+    sparsity_eval = sparsity_eval / 3
+    n_pieces_eval = len(board.pieces["orange"]) - len(board.pieces["white"])
+
+    entropy = np.random.normal(0, STUPIDITY)
+
+    return sparsity_eval + n_pieces_eval + entropy
 
 
-def make_move(board, move):
+def make_move(board: "Board", move: tuple[int | None, "Node", int]):
+    if not move:
+        board.winner = "orange" if board.turn == "white" else "white"
+        return
+
     moved_piece_id, move_node, _ = move
     moved_piece = (
         [piece for piece in board.pieces[board.turn] if piece.id == moved_piece_id][0]
@@ -98,12 +143,17 @@ def make_move(board, move):
         else:
             board.turn = other_turn
     else:
-        board.pieces[other_turn].remove(move_node)
+        captured_piece = [
+            piece for piece in board.pieces[other_turn] if piece.piece.node == move_node
+        ][0]
+
+        board.pieces[other_turn].remove(captured_piece)
+        board.available_nodes.append(move_node)
         board.phase = board.latest_phase
         board.turn = other_turn
 
 
-if __name__ == "__main__":
+def main():
     if RENDER:
         pygame.init()
         screen = pygame.display.set_mode(
@@ -111,9 +161,7 @@ if __name__ == "__main__":
         )
     board = Board(interactables=INTERACTABLES)
     board.latest_phase = board.phase
-    i = 0
     remove_piece = False
-    played = False
     while True:
         board.update_draggable_pieces()
         if RENDER:
@@ -123,7 +171,7 @@ if __name__ == "__main__":
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
-                elif not board.game_over():
+                elif not board.game_over:
                     if board.turn in board.interactables:  # type: ignore
                         if not remove_piece:
                             # Handle events for draggable pieces
@@ -146,6 +194,7 @@ if __name__ == "__main__":
                                 if piece.handle_remove_event(event, board):
                                     removed = True
                                     board.pieces[other_turn].remove(piece)
+                                    board.available_nodes.append(piece.piece.node)
                                     break
                             if removed:
                                 remove_piece = False
@@ -154,23 +203,21 @@ if __name__ == "__main__":
                                 )
                                 board.phase = board.latest_phase
 
-                else:
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        board = Board(interactables=INTERACTABLES)
-                        board.latest_phase = board.phase
         board.update_draggable_pieces()
         if RENDER:
             board.draw(screen, CELL_SIZE, MARGIN)
 
         if board.turn not in board.interactables:  # type: ignore
-            if not board.game_over():
-                print("Thinking ...")
+            if not board.game_over:
                 best_move, value = minimax(
                     board,
                     depth=DIFFICULTY,
-                    maximizing_player=True,
                     alpha=float("-inf"),
                     beta=float("inf"),
                 )
 
-                make_move(board, best_move)
+                make_move(board, best_move)  # type: ignore
+
+
+if __name__ == "__main__":
+    main()
