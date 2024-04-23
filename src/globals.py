@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.env.node import Node
+from src.game_env.node import Node
 from typing import Literal
 from collections import defaultdict
 

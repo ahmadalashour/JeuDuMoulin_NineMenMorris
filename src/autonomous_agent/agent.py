@@ -1,10 +1,10 @@
-from src.env.board import Board
+from src.game_env.board import Board
 from src.globals import NODE_LOOKUP
 from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from src.env.node import Node
+    from src.game_env.node import Node
 
 from src.globals import TRAINING_PARAMETERS
 

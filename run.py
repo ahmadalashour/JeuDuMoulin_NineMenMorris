@@ -1,5 +1,5 @@
 import pygame
-from src.env.board import Board
+from src.game_env.board import Board
 from src.globals import CELL_SIZE, MARGIN
 
 from src.globals import TRAINING_PARAMETERS
