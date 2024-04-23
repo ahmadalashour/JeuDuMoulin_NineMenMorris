@@ -44,14 +44,9 @@ class Board:
 
     def ai_copy(self):
         new_board = Board([])
-        new_board.pieces = {
-            player: [piece.copy_ai() for piece in self.pieces[player]]
-            for player in self.pieces
-        }
+        new_board.pieces = {player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces}
 
-        new_board.available_pieces = {
-            player: self.available_pieces[player] for player in self.available_pieces
-        }
+        new_board.available_pieces = {player: self.available_pieces[player] for player in self.available_pieces}
         new_board.turn = self.turn
         new_board.phase = self.phase
         new_board.sid = self.sid
@@ -60,15 +55,9 @@ class Board:
 
         for a, b, c in self.formed_mills:
             try:
-                a_corr = [p for p in new_board.pieces[a.piece.player] if p.id == a.id][
-                    0
-                ]
-                b_corr = [p for p in new_board.pieces[b.piece.player] if p.id == b.id][
-                    0
-                ]
-                c_corr = [p for p in new_board.pieces[c.piece.player] if p.id == c.id][
-                    0
-                ]
+                a_corr = [p for p in new_board.pieces[a.piece.player] if p.id == a.id][0]
+                b_corr = [p for p in new_board.pieces[b.piece.player] if p.id == b.id][0]
+                c_corr = [p for p in new_board.pieces[c.piece.player] if p.id == c.id][0]
                 new_board.formed_mills.append([a_corr, b_corr, c_corr])
             except:
                 pass
@@ -124,19 +113,13 @@ class Board:
         return self.winner is not None or self.check_game_over()
 
     def check_game_over(self):
-        return (
-            self.available_pieces["orange"] == 0
-            and self.available_pieces["white"] == 0
-            and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
-        )
+        return self.available_pieces["orange"] == 0 and self.available_pieces["white"] == 0 and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
 
     def draw(self, screen, cell_size: int, margin: int):
         self.start_timer("draw")
         # Load background image
         background = pygame.image.load("assets/background.jpg")
-        background = pygame.transform.scale(
-            background, (screen.get_width(), screen.get_height())
-        )
+        background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
         screen.blit(background, (0, 0))
 
         # Draw edges, legal nodes, numbers, and letters
@@ -205,25 +188,17 @@ class Board:
         for i in range(7):
             number = str(i)
             text = pygame.font.Font(None, 48).render(number, True, (255, 255, 255))
-            screen.blit(
-                text, (3 * margin // 4, (6 - i) * cell_size + cell_size // 2 - 10)
-            )
+            screen.blit(text, (3 * margin // 4, (6 - i) * cell_size + cell_size // 2 - 10))
 
         # Draw letters at the bottom with bigger and white font
         for i, letter in enumerate("ABCDEFG"):
             text = pygame.font.Font(None, 48).render(letter, True, (255, 255, 255))
-            screen.blit(
-                text, (i * cell_size + cell_size // 2 + margin - 10, 7 * cell_size)
-            )
+            screen.blit(text, (i * cell_size + cell_size // 2 + margin - 10, 7 * cell_size))
 
         # Display score and turn with smaller font and appropriate colors
         score_text = f"Orange: {8 - self.available_pieces['orange']}  White: {8 - self.available_pieces['white']}"
-        score_display = pygame.font.Font(None, 36).render(
-            score_text, True, (255, 255, 255)
-        )
-        screen.blit(
-            score_display, (screen.get_width() - score_display.get_width() - 10, 10)
-        )
+        score_display = pygame.font.Font(None, 36).render(score_text, True, (255, 255, 255))
+        screen.blit(score_display, (screen.get_width() - score_display.get_width() - 10, 10))
 
         turn_text = f"Turn: {self.turn.capitalize()}"
         player_color = (255, 255, 255) if self.turn == "white" else (255, 165, 0)
@@ -251,9 +226,7 @@ class Board:
         # Check if the game is over and display game over screen
         if self.game_over:
             winner = self.winner or ("Orange" if self.turn == "white" else "White")
-            game_over_text = pygame.font.Font(None, 72).render(
-                "Game Over " + winner + " wins!", True, (255, 255, 255)
-            )
+            game_over_text = pygame.font.Font(None, 72).render("Game Over " + winner + " wins!", True, (255, 255, 255))
             screen.blit(
                 game_over_text,
                 (
@@ -264,17 +237,13 @@ class Board:
         # Display "Thinking" next to non-interactable pieces during their turn
         for player in self.pieces:
             if player not in self.interactables and self.turn == player:  # type: ignore
-                thinking_text = pygame.font.Font(None, 24).render(
-                    "Thinking", True, (255, 255, 255)
-                )
+                thinking_text = pygame.font.Font(None, 24).render("Thinking", True, (255, 255, 255))
                 # display text to right of the screen, up if white, down if orange
                 screen.blit(
                     thinking_text,
                     (
                         screen.get_width() - thinking_text.get_width() - 10,
-                        screen.get_height() - 2 * margin
-                        if player == "orange"
-                        else 2 * margin,
+                        screen.get_height() - 2 * margin if player == "orange" else 2 * margin,
                     ),
                 )
         # Update the display

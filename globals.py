@@ -83,3 +83,13 @@ NODE_LOOKUP = defaultdict(list)
 for edge in EDGES:
     NODE_LOOKUP[edge[0]].append(edge[1])
     NODE_LOOKUP[edge[1]].append(edge[0])
+
+TRAINING_PARAMETERS = dict(
+    # Global variables
+    RENDER=True,
+    INTERACTABLES=["orange"],
+    DIFFICULTY=5,
+    STUPIDITY=0.0,
+    USE_SPARSITY=False,
+    MAX_N_OPERATIONS=128000,
+)

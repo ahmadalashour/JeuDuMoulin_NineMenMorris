@@ -1,46 +1,29 @@
 import pygame
 from board import Board
-from globals import CELL_SIZE, MARGIN, NODES, NODE_LOOKUP
-from typing import TYPE_CHECKING, Literal
+from globals import CELL_SIZE, MARGIN, NODE_LOOKUP
+from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
     from node import Node
 
-RENDER = True  # Choose to view the gameplay
-INTERACTABLES: list[Literal["orange", "white"]] = [
-    "orange"
-]  # Choose which player to interact with
-DIFFICULTY = 5  # Choose the difficulty level, 1 - 5 # 5 is the hardest and can take up to 20 minutes to make a move
-STUPIDITY = 0.0  # Randomness in AI moves, choose something reasonable like 0 - 2 larger values make AlphaBeta pruning less effective
-USE_SPARSITY = False  # Use sparsity in reward function, set to False for faster moves
-MAX_N_OPERATIONS = 128000  # Maximum number of operations before the game is declared a draw, set to None for no limit
+from globals import TRAINING_PARAMETERS
 
 
 def generate_possible_moves(board: Board) -> list[tuple[int | None, "Node", int]]:
     generated_moves = []
 
     if board.phase == "placing":
-        piece_to_place = [
-            piece for piece in board.pieces[board.turn] if piece.first_move
-        ][0]
+        piece_to_place = [piece for piece in board.pieces[board.turn] if piece.first_move][0]
         for node in board.available_nodes:
-            legality = piece_to_place.check_legal_move(
-                board=board, new_node=node, just_check=True
-            )
+            legality = piece_to_place.check_legal_move(board=board, new_node=node, just_check=True)
             if legality in ["move", "remove"]:
                 generated_moves.append((piece_to_place.id, node, legality))
 
     elif board.phase == "moving":
         for piece in board.pieces[board.turn]:
-            for node in (
-                NODE_LOOKUP[piece.piece.node]
-                if len(board.pieces[board.turn]) > 3
-                else board.available_nodes
-            ):
-                legality = piece.check_legal_move(
-                    board=board, new_node=node, just_check=True
-                )
+            for node in NODE_LOOKUP[piece.piece.node] if len(board.pieces[board.turn]) > 3 else board.available_nodes:
+                legality = piece.check_legal_move(board=board, new_node=node, just_check=True)
                 if legality in ["move", "remove"]:
                     generated_moves.append((piece.id, node, legality))
 
@@ -61,9 +44,10 @@ def minimax(board: Board, depth, alpha, beta):
     maximizing_player = board.turn == "orange"
 
     possible_moves = generate_possible_moves(board)
-    if MAX_N_OPERATIONS:
+    if TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
         n_samples = min(
-            len(possible_moves), int(np.exp(np.log(MAX_N_OPERATIONS) / DIFFICULTY))
+            len(possible_moves),
+            int(np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"])),
         )
         samples_idx = np.random.choice(len(possible_moves), n_samples, replace=False)
     possible_moves = [possible_moves[i] for i in samples_idx]
@@ -101,40 +85,30 @@ def minimax(board: Board, depth, alpha, beta):
         return best_move, min_value
 
 
-def evaluate(board):  # Reward function
+def evaluate(board: Board):  # Reward function
     sparsity_eval = 0
-    if USE_SPARSITY:
+    if TRAINING_PARAMETERS["USE_SPARSITY"]:
         for player in ["orange", "white"]:
             for piece in board.pieces[player]:
                 if len(board.pieces[player]) > 3:
-                    availables = [
-                        node
-                        for node in NODE_LOOKUP[piece.piece.node]
-                        if node in board.available_nodes
-                    ]
-                    sparsity_eval += (
-                        len(availables) if player == "orange" else -len(availables)
-                    )
+                    availables = [node for node in NODE_LOOKUP[piece.piece.node] if node in board.available_nodes]
+                    sparsity_eval += len(availables) if player == "orange" else -len(availables)
 
     sparsity_eval = sparsity_eval / 3
     n_pieces_eval = len(board.pieces["orange"]) - len(board.pieces["white"])
 
-    entropy = np.random.normal(0, STUPIDITY)
+    entropy = np.random.normal(0, TRAINING_PARAMETERS["STUPIDITY"])  # type: ignore
 
     return sparsity_eval + n_pieces_eval + entropy
 
 
-def make_move(board: "Board", move: tuple[int | None, "Node", int]):
+def make_move(board: Board, move: tuple[int | None, "Node", int]):
     if not move:
         board.winner = "orange" if board.turn == "white" else "white"
         return
 
     moved_piece_id, move_node, _ = move
-    moved_piece = (
-        [piece for piece in board.pieces[board.turn] if piece.id == moved_piece_id][0]
-        if moved_piece_id is not None
-        else None
-    )
+    moved_piece = [piece for piece in board.pieces[board.turn] if piece.id == moved_piece_id][0] if moved_piece_id is not None else None
     other_turn = "orange" if board.turn == "white" else "white"
     if moved_piece is not None:
         move_result = moved_piece.move(move_node, board)
@@ -143,9 +117,7 @@ def make_move(board: "Board", move: tuple[int | None, "Node", int]):
         else:
             board.turn = other_turn
     else:
-        captured_piece = [
-            piece for piece in board.pieces[other_turn] if piece.piece.node == move_node
-        ][0]
+        captured_piece = [piece for piece in board.pieces[other_turn] if piece.piece.node == move_node][0]
 
         board.pieces[other_turn].remove(captured_piece)
         board.available_nodes.append(move_node)
@@ -154,17 +126,22 @@ def make_move(board: "Board", move: tuple[int | None, "Node", int]):
 
 
 def main():
-    if RENDER:
-        pygame.init()
-        screen = pygame.display.set_mode(
-            (7 * CELL_SIZE + MARGIN * 5, 7 * CELL_SIZE + MARGIN)
-        )
-    board = Board(interactables=INTERACTABLES)
+    if TRAINING_PARAMETERS["RENDER"]:
+        screen = pygame.display.set_mode((7 * CELL_SIZE + MARGIN * 5, 7 * CELL_SIZE + MARGIN))
+    board = Board(interactables=TRAINING_PARAMETERS["INTERACTABLES"])  # type: ignore
     board.latest_phase = board.phase
     remove_piece = False
+
+    print("Starting game : ")
+    print("Difficulty : ", TRAINING_PARAMETERS["DIFFICULTY"])
+    print("Interactables : ", TRAINING_PARAMETERS["INTERACTABLES"])
+    print("Use sparsity : ", TRAINING_PARAMETERS["USE_SPARSITY"])
+    print("Stupidity : ", TRAINING_PARAMETERS["STUPIDITY"])
+    print("Max number of operations : ", TRAINING_PARAMETERS["MAX_N_OPERATIONS"])
+
     while True:
         board.update_draggable_pieces()
-        if RENDER:
+        if TRAINING_PARAMETERS["RENDER"]:
             board.draw(screen, CELL_SIZE, MARGIN)
 
             for event in pygame.event.get():
@@ -183,9 +160,7 @@ def main():
                                     board.phase = "capturing"
                                     break
                                 if legality == "move":
-                                    board.turn = (
-                                        "orange" if board.turn == "white" else "white"
-                                    )
+                                    board.turn = "orange" if board.turn == "white" else "white"
                                     break
                         else:
                             other_turn = "orange" if board.turn == "white" else "white"
@@ -198,20 +173,18 @@ def main():
                                     break
                             if removed:
                                 remove_piece = False
-                                board.turn = (
-                                    "orange" if board.turn == "white" else "white"
-                                )
+                                board.turn = "orange" if board.turn == "white" else "white"
                                 board.phase = board.latest_phase
 
         board.update_draggable_pieces()
-        if RENDER:
+        if TRAINING_PARAMETERS["RENDER"]:
             board.draw(screen, CELL_SIZE, MARGIN)
 
         if board.turn not in board.interactables:  # type: ignore
             if not board.game_over:
                 best_move, value = minimax(
                     board,
-                    depth=DIFFICULTY,
+                    depth=TRAINING_PARAMETERS["DIFFICULTY"],
                     alpha=float("-inf"),
                     beta=float("inf"),
                 )

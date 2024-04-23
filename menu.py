@@ -1,77 +1,146 @@
 import pygame
 import sys
-import subprocess
+from pygame.locals import QUIT, MOUSEBUTTONDOWN
+from globals import TRAINING_PARAMETERS
+from main import main
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+LIGHT_GRAY = (220, 220, 220)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+SOFT_BLUE = (173, 216, 230)  # Soft blue color for buttons
+
+# Initialize Pygame
+pygame.init()
+
+# Set up the window
+window_width = 800
+window_height = 600
+window_surface = pygame.display.set_mode((window_width, window_height))
+pygame.display.set_caption("Game Menu")
+
+# Load background image
+background_image = pygame.image.load("assets/menubackground.jpg")
+background_image = pygame.transform.scale(background_image, (window_width, window_height))
+
+# Fonts
+font = pygame.font.SysFont(None, 36) # type: ignore
 
 
-def load_background():
-    # Chargez l'image de fond depuis le dossier assets
-    background_image = pygame.image.load("assets/menubackground.jpg")
-    # Redimensionnez l'image pour qu'elle s'adapte à la fenêtre de 800x600
-    background_image = pygame.transform.scale(background_image, (800, 600))
-    return background_image
+# Function to display text on the screen
+def draw_text(text, color, x, y):
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect()
+    text_rect.center = (x, y)
+    window_surface.blit(text_surface, text_rect)
 
 
-def draw_menu(screen, background_image):
-    # Utilisez l'image de fond pour l'arrière-plan
-    screen.blit(background_image, (0, 0))
-
-    font = pygame.font.Font(None, 36)
-    text_jvj = font.render("Joueur vs Joueur", True, (0, 0, 0))
-    text_jvr = font.render("vs Robot", True, (0, 0, 0))
-    text_quit = font.render("Quitter", True, (0, 0, 0))
-
-    # Définissez la couleur de fond pour les boutons
-    button_color = (181, 255, 233)
-    padding = 10  # Espacement autour du texte
-
-    # Créez des rectangles pour le fond des textes
-    text_jvj_rect = text_jvj.get_rect(center=(400, 200))
-    text_jvr_rect = text_jvr.get_rect(center=(400, 300))
-    text_quit_rect = text_quit.get_rect(center=(400, 400))
-
-    # Ajustez les rectangles pour ajouter du padding
-    text_jvj_rect.inflate_ip(padding * 2, padding)
-    text_jvr_rect.inflate_ip(padding * 2, padding)
-    text_quit_rect.inflate_ip(padding * 2, padding)
-
-    # Dessinez les rectangles de fond
-    pygame.draw.rect(screen, button_color, text_jvj_rect)
-    pygame.draw.rect(screen, button_color, text_jvr_rect)
-    pygame.draw.rect(screen, button_color, text_quit_rect)
-
-    # Redessinez les textes sur les rectangles
-    screen.blit(text_jvj, text_jvj.get_rect(center=text_jvj_rect.center))
-    screen.blit(text_jvr, text_jvr.get_rect(center=text_jvr_rect.center))
-    screen.blit(text_quit, text_quit.get_rect(center=text_quit_rect.center))
-
-    return text_jvj_rect, text_jvr_rect, text_quit_rect
+# Function to draw buttons with rounded edges
+def draw_rounded_button(rect, color, text, text_color, radius=10):
+    pygame.draw.rect(window_surface, color, rect, border_radius=radius)
+    draw_text(text, text_color, rect.centerx, rect.centery)
 
 
+# Main menu loop
 def main_menu():
-    pygame.init()
-    screen = pygame.display.set_mode((800, 600))
-    pygame.display.set_caption("Menu Principal")
+    button_width = 300
+    button_height = 50
+    button_margin = 20
+    row_height = button_height + button_margin
+    top_margin = 100  # Adjust this value to lower the buttons
 
-    background_image = load_background()
-    menu_items = draw_menu(screen, background_image)
-    pygame.display.flip()
+    while True:
+        window_surface.blit(background_image, (0, 0))
 
-    running = True
-    while running:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if menu_items[1].collidepoint(event.pos):
-                    subprocess.run(["dist/morris.exe"])
-                elif menu_items[0].collidepoint(event.pos):
-                    # Cela suppose que vous avez une fonction pour lancer le jeu Joueur vs Joueur
-                    pass
-                elif menu_items[2].collidepoint(event.pos):
-                    pygame.quit()
-                    sys.exit()
+            elif event.type == MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                if render_button_rect.collidepoint(x, y):
+                    TRAINING_PARAMETERS["RENDER"] = not TRAINING_PARAMETERS["RENDER"]
+                elif interactables_button_rect.collidepoint(x, y):
+                    TRAINING_PARAMETERS["INTERACTABLES"] = ["white"] if TRAINING_PARAMETERS["INTERACTABLES"] == ["orange"] else ["orange"]
+                elif difficulty_button_rect.collidepoint(x, y):
+                    TRAINING_PARAMETERS["DIFFICULTY"] = (TRAINING_PARAMETERS["DIFFICULTY"] % 10) + 1 # type: ignore
+                elif stupidity_button_rect.collidepoint(x, y):
+                    TRAINING_PARAMETERS["STUPIDITY"] = round(min(TRAINING_PARAMETERS["STUPIDITY"] + 0.1, 2.0), 2) # type: ignore
+                elif sparsity_button_rect.collidepoint(x, y):
+                    TRAINING_PARAMETERS["USE_SPARSITY"] = not TRAINING_PARAMETERS["USE_SPARSITY"]
+                elif max_operations_button_rect.collidepoint(x, y):
+                    TRAINING_PARAMETERS["MAX_N_OPERATIONS"] += 8196 if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None # type: ignore
+                    TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = TRAINING_PARAMETERS["MAX_N_OPERATIONS"] % 256000 if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None # type: ignore
+                elif start_button_rect.collidepoint(x, y):
+                    main()
+                    return
+
+        # Draw buttons
+        render_button_rect = pygame.Rect(50, top_margin, button_width, button_height)
+        draw_rounded_button(
+            render_button_rect,
+            SOFT_BLUE,
+            "Render(DEV): " + str(TRAINING_PARAMETERS["RENDER"]),
+            WHITE,
+        )
+
+        interactables_button_rect = pygame.Rect(50, top_margin + row_height, button_width, button_height)
+        draw_rounded_button(
+            interactables_button_rect,
+            SOFT_BLUE,
+            "Color : " + TRAINING_PARAMETERS["INTERACTABLES"][0], # type: ignore
+            WHITE,
+        )
+
+        difficulty_button_rect = pygame.Rect(50 + button_width + button_margin, top_margin, button_width, button_height)
+        draw_rounded_button(
+            difficulty_button_rect,
+            SOFT_BLUE,
+            "Difficulty: " + str(TRAINING_PARAMETERS["DIFFICULTY"]),
+            WHITE,
+        )
+
+        stupidity_button_rect = pygame.Rect(
+            50 + button_width + button_margin,
+            top_margin + row_height,
+            button_width,
+            button_height,
+        )
+        draw_rounded_button(
+            stupidity_button_rect,
+            SOFT_BLUE,
+            "Stupidity: " + str(TRAINING_PARAMETERS["STUPIDITY"]),
+            WHITE,
+        )
+
+        sparsity_button_rect = pygame.Rect(50, top_margin + 2 * row_height, button_width, button_height)
+        draw_rounded_button(
+            sparsity_button_rect,
+            SOFT_BLUE,
+            "Sparsity(DEV): " + str(TRAINING_PARAMETERS["USE_SPARSITY"]),
+            WHITE,
+        )
+
+        max_operations_button_rect = pygame.Rect(
+            50 + button_width + button_margin,
+            top_margin + 2 * row_height,
+            button_width,
+            button_height,
+        )
+        draw_rounded_button(
+            max_operations_button_rect,
+            SOFT_BLUE,
+            "Max Ops(DEV): " + str(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]),
+            WHITE,
+        )
+
+        start_button_rect = pygame.Rect(250, top_margin + 3 * row_height, button_width, button_height)
+        draw_rounded_button(start_button_rect, SOFT_BLUE, "Start Game", WHITE)
+
+        pygame.display.update()
 
 
-if __name__ == "__main__":
-    main_menu()
+# Start main menu
+main_menu()
