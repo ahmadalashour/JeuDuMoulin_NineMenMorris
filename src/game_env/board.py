@@ -44,6 +44,10 @@ class Board:
         self.available_pieces = {"orange": 8, "white": 8}
         self.timers = {}
 
+    @property
+    def game_over(self):
+        return self.winner is not None or self._check_game_over()
+    
     def ai_copy(self):
         new_board = Board([])
         new_board.pieces = {player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces}
@@ -74,9 +78,8 @@ class Board:
         new_board.available_nodes = self.available_nodes.copy()
         return new_board
 
-    # Add a method to update the position of draggable pieces
     def update_draggable_pieces(self):
-        self.start_timer("update_draggable_pieces")
+        self._start_timer("update_draggable_pieces")
         moving_phase = True
         for player_pieces in self.pieces.values():
             empty_slot = True
@@ -100,32 +103,11 @@ class Board:
 
         if moving_phase and self.phase == "placing":
             self.phase = "moving"
-        self.end_timer("update_draggable_pieces")
+        self._end_timer("update_draggable_pieces")
 
-    def start_timer(self, key):
-        self.timers[key] = time.time()
-
-    def end_timer(self, key):
-        pass
-        # time.time() - self.timers[key]
-        # uncomment to display times
-        # print(f"Time taken for {key}: {elapsed_time} seconds")
-
-    def __repr__(self):
-        return f"Board(turn={self.turn}, phase={self.phase})"
-
-    def add_piece(self, piece: DraggablePiece):
-        self.pieces[piece.piece.player].append(piece)
-
-    @property
-    def game_over(self):
-        return self.winner is not None or self.check_game_over()
-
-    def check_game_over(self):
-        return self.available_pieces["orange"] == 0 and self.available_pieces["white"] == 0 and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
-
+    
     def draw(self, screen, cell_size: int, margin: int):
-        self.start_timer("draw")
+        self._start_timer("draw")
         # Load background image
         background = pygame.image.load("assets/background.jpg")
         background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
@@ -257,4 +239,21 @@ class Board:
                 )
         # Update the display
         pygame.display.flip()
-        self.end_timer("draw")
+        self._end_timer("draw")
+
+    def _start_timer(self, key):
+        self.timers[key] = time.time()
+
+    def _end_timer(self, key):
+        pass
+        # time.time() - self.timers[key]
+        # uncomment to display times
+        # print(f"Time taken for {key}: {elapsed_time} seconds")
+
+
+    def __repr__(self):
+        return f"Board(turn={self.turn}, phase={self.phase})"
+
+    def _check_game_over(self):
+        return self.available_pieces["orange"] == 0 and self.available_pieces["white"] == 0 and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
+

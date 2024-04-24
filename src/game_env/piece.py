@@ -124,15 +124,6 @@ class DraggablePiece:
                 f"{chr(np.clip(round((mouse_x - self.margin -  self.cell_size // 2) /  self.cell_size), 0, 6) + 97)}{6 - np.clip(round((mouse_y -  self.cell_size // 2) /  self.cell_size), 0, 6)}"
             )
 
-    def __lt__(self, other):
-        return self.id < other.id
-
-    def __eq__(self, other):
-        return self.id == other.id
-
-    def __repr__(self) -> str:
-        return f"{self.piece.player} piece at {self.piece.node} with id {self.id} and state {self.first_move}"
-
     def update_mills(self, board: "Board") -> None:
         for x, y, z in board.current_mills:
             if self in [x, y, z]:
@@ -196,3 +187,12 @@ class DraggablePiece:
                 return "remove"
 
         return "move"
+
+    def __lt__(self, other):
+        return self.id < other.id
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __repr__(self) -> str:
+        return f"{self.piece.player} piece at {self.piece.node} with id {self.id} and state {self.first_move}"
