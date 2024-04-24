@@ -17,7 +17,7 @@ pygame.init()
 
 # Set up the window
 window_width = 800
-window_height = 600
+window_height = 800
 window_surface = pygame.display.set_mode((window_width, window_height))
 pygame.display.set_caption("Jeu Du Moulin")
 
@@ -49,7 +49,7 @@ def main_menu():
     button_height = 50
     button_margin = 20
     row_height = button_height + button_margin
-    top_margin = 100  # Adjust this value to lower the buttons
+    top_margin = 180  # Adjust this value to lower the buttons
 
     while True:
         window_surface.blit(background_image, (0, 0))
@@ -62,14 +62,14 @@ def main_menu():
                 x, y = pygame.mouse.get_pos()
                 if interactables_orange_button_rect.collidepoint(x, y):
                     if TRAINING_PARAMETERS["INTERACTABLES"]:
-                        TRAINING_PARAMETERS["INTERACTABLES"][0] = "Human" if TRAINING_PARAMETERS["INTERACTABLES"][0] == "Bot" else "Bot" # type: ignore
+                        TRAINING_PARAMETERS["INTERACTABLES"][0] = "Human" if TRAINING_PARAMETERS["INTERACTABLES"][0] == "Bot" else "Bot"  # type: ignore
                     else:
-                        TRAINING_PARAMETERS["INTERACTABLES"].append("Bot") # type: ignore
+                        TRAINING_PARAMETERS["INTERACTABLES"].append("Bot")  # type: ignore
                 elif interactables_white_button_rect.collidepoint(x, y):
-                    if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1: # type: ignore
-                        TRAINING_PARAMETERS["INTERACTABLES"][1] = "Human" if TRAINING_PARAMETERS["INTERACTABLES"][1] == "Bot" else "Bot" # type: ignore
+                    if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1:  # type: ignore
+                        TRAINING_PARAMETERS["INTERACTABLES"][1] = "Human" if TRAINING_PARAMETERS["INTERACTABLES"][1] == "Bot" else "Bot"  # type: ignore
                     else:
-                        TRAINING_PARAMETERS["INTERACTABLES"].append("Bot") # type: ignore
+                        TRAINING_PARAMETERS["INTERACTABLES"].append("Bot")  # type: ignore
                 elif difficulty_button_rect.collidepoint(x, y):
                     TRAINING_PARAMETERS["DIFFICULTY"] = (TRAINING_PARAMETERS["DIFFICULTY"] % 10) + 1  # type: ignore
                 elif stupidity_button_rect.collidepoint(x, y):
@@ -77,14 +77,15 @@ def main_menu():
                 elif sparsity_button_rect.collidepoint(x, y):
                     TRAINING_PARAMETERS["USE_SPARSITY"] = not TRAINING_PARAMETERS["USE_SPARSITY"]
                 elif max_operations_button_rect.collidepoint(x, y):
-                    TRAINING_PARAMETERS["MAX_N_OPERATIONS"] += 8196 if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None  # type: ignore
-                    TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = TRAINING_PARAMETERS["MAX_N_OPERATIONS"] % 256000 if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None  # type: ignore
+                    TRAINING_PARAMETERS["MAX_N_OPERATIONS"] += int(TRAINING_PARAMETERS["MAX_N_OPERATIONS"] / 5) if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None  # type: ignore
+                    TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = TRAINING_PARAMETERS["MAX_N_OPERATIONS"] % 10000000 if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None  # type: ignore
+
                 elif start_button_rect.collidepoint(x, y):
-                    if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 0: # type: ignore
-                        TRAINING_PARAMETERS["INTERACTABLES"][0] = "orange" if TRAINING_PARAMETERS["INTERACTABLES"][0] == "Human" else "Bot" # type: ignore
-                    if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1: # type: ignore
-                        TRAINING_PARAMETERS["INTERACTABLES"][1] = "white" if TRAINING_PARAMETERS["INTERACTABLES"][1] == "Human" else "Bot" # type: ignore 
-                    TRAINING_PARAMETERS["INTERACTABLES"] = [x for x in TRAINING_PARAMETERS["INTERACTABLES"] if x != "Bot"] # type: ignore
+                    if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 0:  # type: ignore
+                        TRAINING_PARAMETERS["INTERACTABLES"][0] = "orange" if TRAINING_PARAMETERS["INTERACTABLES"][0] == "Human" else "Bot"  # type: ignore
+                    if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1:  # type: ignore
+                        TRAINING_PARAMETERS["INTERACTABLES"][1] = "white" if TRAINING_PARAMETERS["INTERACTABLES"][1] == "Human" else "Bot"  # type: ignore
+                    TRAINING_PARAMETERS["INTERACTABLES"] = [x for x in TRAINING_PARAMETERS["INTERACTABLES"] if x != "Bot"]  # type: ignore
 
                     main()
                     return
@@ -94,7 +95,7 @@ def main_menu():
         draw_rounded_button(
             interactables_orange_button_rect,
             SOFT_BLUE,
-            "Player Orange: " + (TRAINING_PARAMETERS["INTERACTABLES"][0] if TRAINING_PARAMETERS["INTERACTABLES"] else "Bot"), # type: ignore
+            "Player Orange: " + (TRAINING_PARAMETERS["INTERACTABLES"][0] if TRAINING_PARAMETERS["INTERACTABLES"] else "Bot"),  # type: ignore
             WHITE,
         )
 
@@ -102,7 +103,7 @@ def main_menu():
         draw_rounded_button(
             interactables_white_button_rect,
             SOFT_BLUE,
-            "Player White: " + (TRAINING_PARAMETERS["INTERACTABLES"][1] if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1 else "Bot"), # type: ignore
+            "Player White: " + (TRAINING_PARAMETERS["INTERACTABLES"][1] if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1 else "Bot"),  # type: ignore
             WHITE,
         )
 
