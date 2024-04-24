@@ -47,7 +47,7 @@ class Board:
     @property
     def game_over(self):
         return self.winner is not None or self._check_game_over()
-    
+
     def ai_copy(self):
         new_board = Board([])
         new_board.pieces = {player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces}
@@ -105,7 +105,6 @@ class Board:
             self.phase = "moving"
         self._end_timer("update_draggable_pieces")
 
-    
     def draw(self, screen, cell_size: int, margin: int):
         self._start_timer("draw")
         # Load background image
@@ -250,10 +249,8 @@ class Board:
         # uncomment to display times
         # print(f"Time taken for {key}: {elapsed_time} seconds")
 
-
     def __repr__(self):
         return f"Board(turn={self.turn}, phase={self.phase})"
 
     def _check_game_over(self):
         return self.available_pieces["orange"] == 0 and self.available_pieces["white"] == 0 and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
-
