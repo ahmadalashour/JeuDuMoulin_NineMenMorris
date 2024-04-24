@@ -7,10 +7,12 @@ from src.game_env.piece import DraggablePiece, Piece
 if TYPE_CHECKING:
     from src.game_env.node import Node
 from src.globals import EDGES, NODES, Turn
+import contextlib
 
 
 class Board:
     formed_mills = []
+    current_mills = []
     turn: Turn = "orange"
     phase: Literal["placing", "moving", "capturing"] = "placing"
     latest_phase: Literal["placing", "moving", "capturing"] = "placing"
@@ -45,6 +47,7 @@ class Board:
     def ai_copy(self):
         new_board = Board([])
         new_board.pieces = {player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces}
+        id_piece_map = {piece.id: piece for player in new_board.pieces.values() for piece in player}
 
         new_board.available_pieces = {player: self.available_pieces[player] for player in self.available_pieces}
         new_board.turn = self.turn
@@ -54,13 +57,19 @@ class Board:
         new_board.formed_mills = []
 
         for a, b, c in self.formed_mills:
-            try:
-                a_corr = [p for p in new_board.pieces[a.piece.player] if p.id == a.id][0]
-                b_corr = [p for p in new_board.pieces[b.piece.player] if p.id == b.id][0]
-                c_corr = [p for p in new_board.pieces[c.piece.player] if p.id == c.id][0]
+            with contextlib.suppress(KeyError):
+                a_corr = id_piece_map[a.id]
+                b_corr = id_piece_map[b.id]
+                c_corr = id_piece_map[c.id]
                 new_board.formed_mills.append([a_corr, b_corr, c_corr])
-            except:
-                pass
+
+        new_board.current_mills = []
+        for a, b, c in self.current_mills:
+            with contextlib.suppress(KeyError):
+                a_corr = id_piece_map[a.id]
+                b_corr = id_piece_map[b.id]
+                c_corr = id_piece_map[c.id]
+                new_board.current_mills.append([a_corr, b_corr, c_corr])
 
         new_board.available_nodes = self.available_nodes.copy()
         return new_board

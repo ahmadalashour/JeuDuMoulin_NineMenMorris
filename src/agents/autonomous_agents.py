@@ -38,7 +38,8 @@ class MinMaxAgent:
             other_turn = "orange" if board.turn == "white" else "white"
             for piece in board.pieces[other_turn]:
                 if not piece.first_move:
-                    generated_moves.append((None, piece.piece.node, "remove"))
+                    if piece.removable(board):
+                        generated_moves.append((None, piece.piece.node, "remove"))
 
         return generated_moves
 
@@ -76,7 +77,7 @@ class MinMaxAgent:
                 board.turn = other_turn
         else:
             captured_piece = [piece for piece in board.pieces[other_turn] if piece.piece.node == move_node][0]
-
+            captured_piece.update_mills(board)
             board.pieces[other_turn].remove(captured_piece)
             board.available_nodes.append(move_node)
             board.phase = board.latest_phase

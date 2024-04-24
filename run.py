@@ -12,7 +12,9 @@ def main():
     if TRAINING_PARAMETERS["RENDER"]:
         screen = pygame.display.set_mode((7 * CELL_SIZE + MARGIN * 5, 7 * CELL_SIZE + MARGIN))
     board = Board(interactables=TRAINING_PARAMETERS["INTERACTABLES"])  # type: ignore
-    max_n_samples = int(np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"]))
+    max_n_samples = None
+    if TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
+        max_n_samples = int(np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"]))
 
     agents = {color: (MinMaxAgent(max_n_samples) if color not in board.interactables else HumanAgent()) for color in board.available_pieces.keys()}  # type: ignore
 
