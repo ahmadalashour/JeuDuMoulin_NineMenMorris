@@ -3,6 +3,12 @@ import dataclasses as dc
 
 @dc.dataclass
 class Node:
+    """Class to represent a node in the board.
+
+    Args:
+        str_repr (str): The string representation of the node.
+    """
+
     str_repr: str
     _x: int = dc.field(init=False)
     _y: int = dc.field(init=False)

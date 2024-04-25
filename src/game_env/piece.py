@@ -13,6 +13,17 @@ if TYPE_CHECKING:
 
 @dc.dataclass
 class Piece:
+    """Class to represent a piece on the board.
+
+    Args:
+        player (str): The player that owns the piece.
+        node (Node, optional): The node the piece is on. Defaults to None.
+
+    Attributes:
+        player (str): The player that owns the piece.
+        node (Node): The node the piece is on.
+    """
+
     player: str
     node: Node
 
@@ -27,6 +38,22 @@ class Piece:
 
 @dc.dataclass
 class DraggablePiece:
+    """Class to represent a piece that can be dragged around the board.
+
+    Args:
+        piece (Piece): The piece object to be represented.
+        id (int): A unique identifier for the piece.
+        interactable (bool, optional): Whether the piece can be interacted with. Defaults to True.
+        first_move (bool, optional): Whether the piece has moved yet. Defaults to True.
+
+        Attributes:
+        dragging (bool): Whether the piece is currently being dragged.
+        starting_node (Optional[Node]): The node the piece was on before being dragged.
+        cell_size (int): The size of each cell on the board.
+        margin (int): The margin around the board.
+        mill_count (int): The number of mills the piece is part of.
+    """
+
     piece: Piece
     id: int
     interactable: bool = True
@@ -40,6 +67,15 @@ class DraggablePiece:
 
     @staticmethod
     def is_mill(nodes: tuple[Node, Node, Node]) -> bool:
+        """Check if the given nodes form a mill.
+
+        Args:
+            nodes (tuple[Node, Node, Node]): The nodes to check.
+
+        Returns:
+            bool: Whether the nodes form a mill.
+        """
+
         edge_check = (
             (nodes[0] in NODE_LOOKUP[nodes[1]] and nodes[1] in NODE_LOOKUP[nodes[0]])
             or (nodes[1] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[1]])
@@ -48,6 +84,7 @@ class DraggablePiece:
         return edge_check and (nodes[0].x == nodes[1].x == nodes[2].x or nodes[0].y == nodes[1].y == nodes[2].y)
 
     def copy_ai(self):
+        """Create a copy of the piece for the AI to use."""
         return DraggablePiece(
             piece=deepcopy(self.piece),
             id=self.id,
@@ -56,9 +93,11 @@ class DraggablePiece:
         )
 
     def removable(self, board: "Board") -> bool:
+        """Check if the piece can be removed from the board."""
         return self.mill_count == 0 or all([piece.mill_count > 0 for piece in board.pieces[self.piece.player]])
 
     def handle_remove_event(self, event: pygame.event.Event, board: "Board") -> bool:
+        """Handle the event of removing the piece from the board."""
         if not self.first_move:
             if event.type == MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -78,6 +117,7 @@ class DraggablePiece:
         return False
 
     def handle_event(self, event: pygame.event.Event, board: "Board"):
+        """Handle the event of moving the piece on the board."""
         if not self.interactable:
             return
         if (board.phase == "placing" and self.first_move) or board.phase == "moving":
@@ -112,6 +152,15 @@ class DraggablePiece:
                 return self.move(new_node, board)
 
     def move(self, new_node: Node, board: "Board") -> Action:
+        """Move the piece to the given node on the board.
+
+        Args:
+            new_node (Node): The node to move the piece to.
+            board (Board): The board object.
+
+        Returns:
+            Action: The action taken.
+        """
         legality = self.check_legal_move(board, new_node)
         if new_node in NODES and legality in ["move", "remove"]:
 
@@ -127,6 +176,7 @@ class DraggablePiece:
             return "undo"
 
     def update_position(self):
+        """Update the position of the piece on the board."""
         if self.dragging:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             self.piece.node = Node(
@@ -134,6 +184,7 @@ class DraggablePiece:
             )
 
     def update_mills(self, board: "Board") -> None:
+        """Update the mills formed by the piece on the board."""
         for x, y, z in board.current_mills:
             if self in [x, y, z]:
                 board.current_mills.remove([x, y, z])
@@ -142,6 +193,16 @@ class DraggablePiece:
                 z.mill_count -= 1
 
     def check_legal_move(self, board: "Board", new_node: Node, just_check: bool = False) -> Action:
+        """Check if the move to the given node is legal.
+
+        Args:
+            board (Board): The board object.
+            new_node (Node): The node to move the piece to.
+            just_check (bool, optional): Whether to only check the legality. Defaults to False.
+
+        Returns:
+            Action: The action taken.
+        """
 
         if not self.interactable:
             self.starting_node = self.piece.node

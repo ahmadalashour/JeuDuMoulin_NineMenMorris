@@ -45,6 +45,7 @@ def draw_rounded_button(rect, color, text, text_color, radius=10):
 
 # Main menu loop
 def main_menu():
+    """Main menu loop to select the players and start the game."""
     button_width = 300
     button_height = 50
     button_margin = 20
@@ -153,5 +154,6 @@ def main_menu():
         pygame.display.update()
 
 
-# Start main menu
-main_menu()
+if __name__ == "__main__":
+    # Start main menu
+    main_menu()

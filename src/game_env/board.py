@@ -2,7 +2,7 @@
 import pygame
 import time
 from typing import Literal, TYPE_CHECKING
-from src.game_env.piece import DraggablePiece, Piece
+from src.game_env.piece import DraggablePiece, Piece  # type: ignore
 
 if TYPE_CHECKING:
     from src.game_env.node import Node
@@ -11,6 +11,26 @@ import contextlib
 
 
 class Board:
+    """Class to represent the board of the game.
+
+    Args:
+        interactables (list[str], optional): List of players that can interact with the board. Defaults to None.
+
+    Attributes:
+        pieces (dict[str, list[DraggablePiece]]): Dictionary of player pieces.
+        available_pieces (dict[str, int]): Dictionary of available pieces for each player.
+        timers (dict[str, float]): Dictionary of timers for each operation.
+        formed_mills (list[list[DraggablePiece]]): List of formed mills.
+        current_mills (list[list[DraggablePiece]]): List of current mills.
+        turn (Turn): Current turn.
+        phase (Literal["placing", "moving", "capturing"]): Current phase.
+        latest_phase (Literal["placing", "moving", "capturing"]): Latest phase.
+        interactables (list[str]): List of players that can interact with the board.
+        available_nodes (list[Node]): List of available nodes.
+        winner (Literal["orange", "white"]): Winner of the game.
+        sid (int): Id of the next piece to be added to the board.
+    """
+
     formed_mills = []
     current_mills = []
     turn: Turn = "orange"
@@ -46,9 +66,11 @@ class Board:
 
     @property
     def game_over(self):
+        """Check if the game is over."""
         return self.winner is not None or self._check_game_over()
 
     def ai_copy(self):
+        """Create a copy of the board for the AI to use."""
         new_board = Board([])
         new_board.pieces = {player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces}
         id_piece_map = {piece.id: piece for player in new_board.pieces.values() for piece in player}
@@ -79,6 +101,7 @@ class Board:
         return new_board
 
     def update_draggable_pieces(self):
+        """Update the position of the draggable pieces on the board."""
         self._start_timer("update_draggable_pieces")
         moving_phase = True
         for player_pieces in self.pieces.values():
@@ -106,6 +129,13 @@ class Board:
         self._end_timer("update_draggable_pieces")
 
     def draw(self, screen, cell_size: int, margin: int):
+        """Draw the board on the screen.
+
+        Args:
+            screen (pygame.Surface): The screen to draw the board on.
+            cell_size (int): The size of each cell.
+            margin (int): The margin around the board.
+        """
         self._start_timer("draw")
         # Load background image
         background = pygame.image.load("assets/background.jpg")
