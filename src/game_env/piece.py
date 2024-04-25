@@ -94,7 +94,7 @@ class DraggablePiece:
 
     def removable(self, board: "Board") -> bool:
         """Check if the piece can be removed from the board."""
-        return self.mill_count == 0 or all([piece.mill_count > 0 for piece in board.pieces[self.piece.player]])
+        return self.mill_count == 0 or all([piece.mill_count > 0 for piece in board.pieces[self.piece.player] if not piece.first_move])
 
     def handle_remove_event(self, event: pygame.event.Event, board: "Board") -> bool:
         """Handle the event of removing the piece from the board."""
