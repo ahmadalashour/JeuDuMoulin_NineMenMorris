@@ -9,6 +9,7 @@ import numpy as np
 
 
 def main():
+    """Main function to run the game."""
     if TRAINING_PARAMETERS["RENDER"]:
         screen = pygame.display.set_mode((7 * CELL_SIZE + MARGIN * 5, 7 * CELL_SIZE + MARGIN))
     board = Board(interactables=TRAINING_PARAMETERS["INTERACTABLES"])  # type: ignore
@@ -51,7 +52,7 @@ def main():
                 if isinstance(agents[board.turn], MinMaxAgent):
                     best_move, _ = agents[board.turn].minimax(  # type: ignore
                         board,
-                        depth=TRAINING_PARAMETERS["DIFFICULTY"],
+                        depth=TRAINING_PARAMETERS["DIFFICULTY"],  # type: ignore
                         alpha=float("-inf"),
                         beta=float("inf"),
                     )

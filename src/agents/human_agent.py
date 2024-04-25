@@ -6,15 +6,24 @@ if TYPE_CHECKING:
 
 
 class HumanAgent:
-    remove_piece = False
+    """Class to represent a human agent."""
+
+    _remove_piece = False
 
     def move(self, event: "pygame.event.Event", board: "Board"):
-        if not self.remove_piece:
+        """Method to handle the human agent's move.
+
+        Args:
+            event (pygame.event.Event): The event to handle.
+            board (Board): The board to play on.
+        """
+
+        if not self._remove_piece:
             # Handle events for draggable pieces
             for piece in board.pieces[board.turn]:
                 legality = piece.handle_event(event, board)
                 if legality == "remove":
-                    self.remove_piece = True
+                    self._remove_piece = True
                     board.latest_phase = board.phase
                     board.phase = "capturing"
                     break
@@ -31,6 +40,6 @@ class HumanAgent:
                     board.available_nodes.append(piece.piece.node)
                     break
             if removed:
-                self.remove_piece = False
+                self._remove_piece = False
                 board.turn = "orange" if board.turn == "white" else "white"
                 board.phase = board.latest_phase

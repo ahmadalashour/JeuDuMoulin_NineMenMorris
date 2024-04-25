@@ -1,6 +1,6 @@
 from src.game_env.board import Board
 from src.globals import NODE_LOOKUP
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any
 import numpy as np
 import dataclasses as dc
 
@@ -13,11 +13,24 @@ from src.globals import TRAINING_PARAMETERS
 
 @dc.dataclass
 class MinMaxAgent:
+    """Class to represent a MinMax agent.
+
+    Args:
+        max_n_samples (int): The maximum number of samples to consider.
+    """
 
     max_n_samples: Optional[int] = None
 
     @staticmethod
     def generate_possible_moves(board: Board) -> list[tuple[int | None, "Node", int]]:
+        """Method to generate all possible moves for the agent.
+
+        Args:
+            board (Board): The board to generate moves for.
+
+        Returns:
+            list[tuple[int | None, Node, int]]: The list of possible moves.
+        """
         generated_moves = []
 
         if board.phase == "placing":
@@ -45,6 +58,14 @@ class MinMaxAgent:
 
     @staticmethod
     def evaluate(board: Board):  # Reward function
+        """Method to evaluate the board state.
+
+        Args:
+            board (Board): The board to evaluate.
+
+        Returns:
+            float: The evaluation of the board state.
+        """
         sparsity_eval = 0
         if TRAINING_PARAMETERS["USE_SPARSITY"]:
             for player in ["orange", "white"]:
@@ -62,6 +83,13 @@ class MinMaxAgent:
 
     @staticmethod
     def make_move(board: Board, move: tuple[int | None, "Node", int]):
+        """Method to make a move on the board.
+
+        Args:
+            board (Board): The board to make the move on.
+            move (tuple[int | None, Node, int]): The move to make.
+        """
+
         if not move:
             board.winner = "orange" if board.turn == "white" else "white"
             return
@@ -83,7 +111,19 @@ class MinMaxAgent:
             board.phase = board.latest_phase
             board.turn = other_turn
 
-    def minimax(self, board: Board, depth, alpha, beta):
+    def minimax(self, board: Board, depth: int, alpha: float, beta: float) -> tuple[Any, float]:
+        """Method to perform the minimax algorithm.
+
+        Args:
+            board (Board): The board to perform the minimax on.
+            depth (int): The depth to perform the minimax to.
+            alpha (float): The alpha value.
+            beta (float): The beta value.
+
+        Returns:
+            tuple[int | None, float]: The best move and its value.
+        """
+
         board.update_draggable_pieces()
         if depth == 0 or board.game_over:
             return None, self.evaluate(board)
