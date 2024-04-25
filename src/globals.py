@@ -13,6 +13,7 @@ Turn = Literal["orange", "white"]
 Action = Literal["move", "remove", "undo"]
 CELL_SIZE = 80
 MARGIN = 50
+MIN_DRAW_MOVES = 30
 
 NODES = [
     Node("a0"),

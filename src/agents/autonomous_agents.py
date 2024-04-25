@@ -110,6 +110,9 @@ class MinMaxAgent:
             board.available_nodes.append(move_node)
             board.phase = board.latest_phase
             board.turn = other_turn
+            return True
+
+        return False
 
     def minimax(self, board: Board, depth: int, alpha: float, beta: float) -> tuple[Any, float]:
         """Method to perform the minimax algorithm.

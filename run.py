@@ -1,6 +1,6 @@
 import pygame
 from src.game_env.board import Board
-from src.globals import CELL_SIZE, MARGIN
+from src.globals import CELL_SIZE, MARGIN, MIN_DRAW_MOVES
 
 from src.globals import TRAINING_PARAMETERS
 from src.agents.autonomous_agents import MinMaxAgent
@@ -28,8 +28,10 @@ def main():
     print("Stupidity : ", TRAINING_PARAMETERS["STUPIDITY"])
     print("Max number of operations : ", TRAINING_PARAMETERS["MAX_N_OPERATIONS"])
     print("Max number of samples : ", max_n_samples)
+    latest_moves = []
+    can_add = False
 
-    while True:
+    while True:  # Main game loop
         board.update_draggable_pieces()
         if TRAINING_PARAMETERS["RENDER"]:
             board.draw(screen, CELL_SIZE, MARGIN)
@@ -41,7 +43,9 @@ def main():
                 elif not board.game_over:
                     if board.turn in board.interactables:  # type: ignore
                         if isinstance(agents[board.turn], HumanAgent):
-                            agents[board.turn].move(event, board)  # type: ignore
+                            move = agents[board.turn].move(event, board)  # type: ignore
+                            if can_add:
+                                latest_moves.append(move)
 
         board.update_draggable_pieces()
         if TRAINING_PARAMETERS["RENDER"]:
@@ -56,8 +60,15 @@ def main():
                         alpha=float("-inf"),
                         beta=float("inf"),
                     )
+                    move = agents[board.turn].make_move(board, best_move)  # type: ignore
+                    if can_add:
+                        latest_moves.append(move)
 
-                    agents[board.turn].make_move(board, best_move)  # type: ignore
+        if not can_add and board.phase != "placing":
+            can_add = True
+
+        if len(latest_moves) > MIN_DRAW_MOVES and not any(latest_moves[-MIN_DRAW_MOVES:]) and board.phase == "moving":
+            board.is_draw = True
 
 
 if __name__ == "__main__":

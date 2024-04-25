@@ -29,6 +29,7 @@ class Board:
         available_nodes (list[Node]): List of available nodes.
         winner (Literal["orange", "white"]): Winner of the game.
         sid (int): Id of the next piece to be added to the board.
+        is_draw (bool): Whether the game is a draw.
     """
 
     formed_mills = []
@@ -40,6 +41,7 @@ class Board:
     available_nodes: list["Node"] = NODES.copy()
     winner: Literal["orange", "white"] | None = None
     sid: int = 0
+    is_draw: bool = False
 
     def __init__(self, interactables: list[Literal["orange", "white"]] | None = None):
         self.interactables = interactables or []
@@ -67,7 +69,7 @@ class Board:
     @property
     def game_over(self):
         """Check if the game is over."""
-        return self.winner is not None or self._check_game_over()
+        return self.winner is not None or self._check_game_over() or self.is_draw
 
     def ai_copy(self):
         """Create a copy of the board for the AI to use."""
@@ -79,6 +81,8 @@ class Board:
         new_board.turn = self.turn
         new_board.phase = self.phase
         new_board.sid = self.sid
+        new_board.winner = self.winner
+        new_board.is_draw = self.is_draw
 
         new_board.formed_mills = []
 
@@ -245,8 +249,11 @@ class Board:
 
         # Check if the game is over and display game over screen
         if self.game_over:
-            winner = self.winner or ("Orange" if self.turn == "white" else "White")
-            game_over_text = pygame.font.Font(None, 72).render("Game Over " + winner + " wins!", True, (255, 255, 255))
+            if self.is_draw:
+                game_over_text = pygame.font.Font(None, 72).render("Game Over: Draw!", True, (255, 255, 255))
+            else:
+                winner = self.winner or ("Orange" if self.turn == "white" else "White")
+                game_over_text = pygame.font.Font(None, 72).render("Game Over: " + winner + " wins!", True, (255, 255, 255))
             screen.blit(
                 game_over_text,
                 (

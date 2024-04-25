@@ -43,3 +43,5 @@ class HumanAgent:
                 self._remove_piece = False
                 board.turn = "orange" if board.turn == "white" else "white"
                 board.phase = board.latest_phase
+                return True
+        return False
