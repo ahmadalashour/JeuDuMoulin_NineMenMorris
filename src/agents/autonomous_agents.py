@@ -91,7 +91,7 @@ class MinMaxAgent:
         maximizing_player = board.turn == "orange"
 
         possible_moves = self.generate_possible_moves(board)
-        if self.max_n_samples:
+        if self.max_n_samples and self.max_n_samples > 0:
             n_samples = min(
                 len(possible_moves),
                 self.max_n_samples,

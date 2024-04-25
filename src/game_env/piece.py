@@ -2,7 +2,7 @@ from src.game_env.node import Node
 import pygame
 import numpy as np
 import dataclasses as dc
-from src.globals import INITIAL_POSITIONS, ICONS, NODES, EDGES, CELL_SIZE, MARGIN, Action, NODE_LOOKUP, is_mill
+from src.globals import INITIAL_POSITIONS, ICONS, NODES, EDGES, CELL_SIZE, MARGIN, Action, NODE_LOOKUP
 from pygame.locals import MOUSEBUTTONDOWN, MOUSEBUTTONUP
 from typing import TYPE_CHECKING, Optional
 from copy import deepcopy
@@ -37,6 +37,15 @@ class DraggablePiece:
     cell_size: int = CELL_SIZE
     margin: int = MARGIN
     mill_count: int = 0
+
+    @staticmethod
+    def is_mill(nodes: tuple[Node, Node, Node]) -> bool:
+        edge_check = (
+            (nodes[0] in NODE_LOOKUP[nodes[1]] and nodes[1] in NODE_LOOKUP[nodes[0]])
+            or (nodes[1] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[1]])
+            or (nodes[0] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[0]])
+        )
+        return edge_check and (nodes[0].x == nodes[1].x == nodes[2].x or nodes[0].y == nodes[1].y == nodes[2].y)
 
     def copy_ai(self):
         return DraggablePiece(
@@ -124,15 +133,6 @@ class DraggablePiece:
                 f"{chr(np.clip(round((mouse_x - self.margin -  self.cell_size // 2) /  self.cell_size), 0, 6) + 97)}{6 - np.clip(round((mouse_y -  self.cell_size // 2) /  self.cell_size), 0, 6)}"
             )
 
-    def __lt__(self, other):
-        return self.id < other.id
-
-    def __eq__(self, other):
-        return self.id == other.id
-
-    def __repr__(self) -> str:
-        return f"{self.piece.player} piece at {self.piece.node} with id {self.id} and state {self.first_move}"
-
     def update_mills(self, board: "Board") -> None:
         for x, y, z in board.current_mills:
             if self in [x, y, z]:
@@ -173,7 +173,7 @@ class DraggablePiece:
                 if second_node in player_controlled_nodes and second_node != self.starting_node:
                     for third_node in NODE_LOOKUP[second_node] + NODE_LOOKUP[new_node]:
                         if third_node in player_controlled_nodes and third_node != self.starting_node and third_node != new_node and third_node != second_node:
-                            if is_mill((new_node, second_node, third_node)):
+                            if self.is_mill((new_node, second_node, third_node)):
                                 second_piece = [piece for piece in board.pieces[self.piece.player] if piece.piece.node == second_node][0]
                                 third_piece = [piece for piece in board.pieces[self.piece.player] if piece.piece.node == third_node][0]
 
@@ -196,3 +196,12 @@ class DraggablePiece:
                 return "remove"
 
         return "move"
+
+    def __lt__(self, other):
+        return self.id < other.id
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __repr__(self) -> str:
+        return f"{self.piece.player} piece at {self.piece.node} with id {self.id} and state {self.first_move}"
