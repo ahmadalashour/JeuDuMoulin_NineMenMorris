@@ -79,9 +79,8 @@ def main_menu():
                 elif max_operations_button_rect.collidepoint(x, y):
                     if not TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
                         TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = 10000
-                    elif TRAINING_PARAMETERS["MAX_N_OPERATIONS"] < 10000000:  # type: ignore
-
-                        TRAINING_PARAMETERS["MAX_N_OPERATIONS"] += int(TRAINING_PARAMETERS["MAX_N_OPERATIONS"] / 5) if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None  # type: ignore
+                    elif TRAINING_PARAMETERS["MAX_N_OPERATIONS"] < 1000000:  # type: ignore
+                        TRAINING_PARAMETERS["MAX_N_OPERATIONS"] += int(TRAINING_PARAMETERS["MAX_N_OPERATIONS"] / 2.0) if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None  # type: ignore
                     else:
                         TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = None
                 elif start_button_rect.collidepoint(x, y):

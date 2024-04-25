@@ -93,12 +93,3 @@ TRAINING_PARAMETERS = dict(
     USE_SPARSITY=False,
     MAX_N_OPERATIONS=None,
 )
-
-
-def is_mill(nodes: tuple[Node, Node, Node]) -> bool:
-    edge_check = (
-        (nodes[0] in NODE_LOOKUP[nodes[1]] and nodes[1] in NODE_LOOKUP[nodes[0]])
-        or (nodes[1] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[1]])
-        or (nodes[0] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[0]])
-    )
-    return edge_check and (nodes[0].x == nodes[1].x == nodes[2].x or nodes[0].y == nodes[1].y == nodes[2].y)
