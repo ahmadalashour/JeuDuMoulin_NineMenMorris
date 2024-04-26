@@ -13,7 +13,7 @@ Turn = Literal["orange", "white"]
 Action = Literal["move", "remove", "undo"]
 CELL_SIZE = 80
 MARGIN = 50
-MIN_DRAW_MOVES = 30
+MIN_DRAW_MOVES = 50
 
 NODES = [
     Node("a0"),
@@ -93,7 +93,14 @@ TRAINING_PARAMETERS = dict(
         "orange": 5,
         "white": 5,
     },
-    STUPIDITY=0.0,
-    USE_SPARSITY=False,
+    STUPIDITY=1.0,
+    USE_SPARSITY=True,
     MAX_N_OPERATIONS=None,
 )
+
+EVALUATION_COEFFICIENTS = {
+    "sparsity": 0.0,
+    "n_pieces": 1.0,
+    "n_mills": 0.3,
+    "entropy": 1.0,
+}

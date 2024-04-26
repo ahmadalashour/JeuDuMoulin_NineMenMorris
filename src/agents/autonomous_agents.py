@@ -1,15 +1,10 @@
 from src.game_env.board import Board
-from src.globals import NODE_LOOKUP
-from typing import TYPE_CHECKING, Optional, Any
+from src.globals import NODE_LOOKUP, TRAINING_PARAMETERS, EVALUATION_COEFFICIENTS
+from typing import Optional, Any
 import numpy as np
 import dataclasses as dc
 from copy import deepcopy
-import pygame
-
-
 from src.game_env.node import Node
-
-from src.globals import TRAINING_PARAMETERS
 
 
 @dc.dataclass
@@ -82,12 +77,19 @@ class MinMaxAgent:
                         ]
                         sparsity_eval += len(availables) if player == "orange" else -len(availables)
 
-        sparsity_eval = sparsity_eval / 3
+        sparsity_eval = sparsity_eval
         n_pieces_eval = len(board.pieces["orange"]) - len(board.pieces["white"])
-
+        white_mills = [mill for mill in board.current_mills if mill[0].piece.player == "white"]
+        orange_mills = [mill for mill in board.current_mills if mill[0].piece.player == "orange"]
+        n_mills_eval = len(orange_mills) - len(white_mills)
         entropy = np.random.normal(0, TRAINING_PARAMETERS["STUPIDITY"])  # type: ignore
 
-        return sparsity_eval + n_pieces_eval + entropy
+        return (
+            EVALUATION_COEFFICIENTS["sparsity"] * sparsity_eval
+            + EVALUATION_COEFFICIENTS["n_pieces"] * n_pieces_eval
+            + EVALUATION_COEFFICIENTS["n_mills"] * n_mills_eval
+            + EVALUATION_COEFFICIENTS["entropy"] * entropy
+        )
 
     def make_move(
         self, board: Board, move: tuple[int | None, "Node", int], render: bool = True
@@ -113,7 +115,6 @@ class MinMaxAgent:
         if moved_piece is not None:
             backup_start_node = deepcopy(moved_piece.piece.node)
             if render:
-                n_steps = 10
                 start_node = deepcopy(moved_piece.piece.node)
                 end_node = deepcopy(move_node)
                 vector = end_node - start_node

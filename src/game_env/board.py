@@ -1,12 +1,12 @@
 # This is a base class for the board of the game (Nine men's Moris ). It is a 2D array of cells.
 import pygame
 import time
-from typing import Literal, TYPE_CHECKING
 from src.game_env.piece import DraggablePiece, Piece  # type: ignore
-
+from typing import Literal
 from src.game_env.node import Node
 from src.globals import EDGES, NODES, Turn
 import contextlib
+from copy import deepcopy
 
 
 class Board:
@@ -41,7 +41,7 @@ class Board:
     phase: Literal["placing", "moving", "capturing"] = "placing"
     latest_phase: Literal["placing", "moving", "capturing"] = "placing"
     interactables: list[Literal["orange", "white"]] | None = None
-    available_nodes: list["Node"] = NODES.copy()
+    available_nodes: list["Node"] = None
     winner: Literal["orange", "white"] | None = None
     sid: int = 0
     is_draw: bool = False
@@ -53,6 +53,7 @@ class Board:
         margin: int,
         interactables: list[Literal["orange", "white"]] | None = None,
     ):
+        self.available_nodes = deepcopy(NODES)
         self.screen = screen
         self.cell_size = cell_size
         self.margin = margin
@@ -314,8 +315,13 @@ class Board:
         return f"Board(turn={self.turn}, phase={self.phase})"
 
     def _check_game_over(self):
-        return (
+        game_over_result =  (
             self.available_pieces["orange"] == 0
             and self.available_pieces["white"] == 0
             and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
         )
+
+        if game_over_result:
+            self.winner = "orange" if len(self.pieces["white"]) < 3 else "white"
+
+        return game_over_result
