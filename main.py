@@ -181,6 +181,7 @@ def main_menu():
 
                         TRAINING_PARAMETERS["DIFFICULTY"]["orange"] = difficulty  # type: ignore
                         TRAINING_PARAMETERS["DIFFICULTY"]["white"] = difficulty # type: ignore
+                        main_menu_soundtrack.stop()
                         main()
                         return
 
