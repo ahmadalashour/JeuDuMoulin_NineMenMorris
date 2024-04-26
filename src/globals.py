@@ -89,7 +89,10 @@ TRAINING_PARAMETERS = dict(
     # Global variables
     RENDER=True,
     INTERACTABLES=[],
-    DIFFICULTY=5,
+    DIFFICULTY={
+        "orange": 5,
+        "white": 5,
+    },
     STUPIDITY=0.0,
     USE_SPARSITY=False,
     MAX_N_OPERATIONS=None,
