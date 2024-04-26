@@ -17,6 +17,7 @@ pygame.init()
 
 # Load sounds
 main_menu_soundtrack = pygame.mixer.Sound("assets/main_menu_soundtrack.mp3")
+main_menu_soundtrack.set_volume(0.6)
 click_sound = pygame.mixer.Sound("assets/GUI_click.mp3")
 hover_sound = pygame.mixer.Sound("assets/GUI_hover.mp3")
 
