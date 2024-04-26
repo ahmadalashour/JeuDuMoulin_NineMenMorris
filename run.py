@@ -16,7 +16,7 @@ def main():
     max_n_samples = None
     if TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
         max_n_samples = int(
-            np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"])
+            np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"]) # type: ignore
         )
     move_sound = pygame.mixer.Sound("assets/move_sound.mp3")
     background_music = pygame.mixer.Sound("assets/background_music.mp3")

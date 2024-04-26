@@ -31,7 +31,7 @@ class HumanAgent:
                     board.turn = "orange" if board.turn == "white" else "white"
                     break
 
-            if legality:
+            if legality in ["move", "remove"]:
                 return False
 
         else:

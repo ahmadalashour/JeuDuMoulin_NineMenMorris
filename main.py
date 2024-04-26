@@ -1,6 +1,6 @@
 import pygame
 import sys
-from pygame.locals import QUIT, MOUSEBUTTONDOWN
+from pygame.locals import QUIT, MOUSEBUTTONDOWN, MOUSEMOTION
 from src.globals import TRAINING_PARAMETERS
 from run import main
 
@@ -15,6 +15,11 @@ SOFT_BLUE = (173, 216, 230)  # Soft blue color for buttons
 # Initialize Pygame
 pygame.init()
 
+# Load sounds
+main_menu_soundtrack = pygame.mixer.Sound("assets/main_menu_soundtrack.mp3")
+click_sound = pygame.mixer.Sound("assets/GUI_click.mp3")
+hover_sound = pygame.mixer.Sound("assets/GUI_hover.mp3")
+
 # Set up the window
 window_width = 800
 window_height = 800
@@ -28,6 +33,8 @@ background_image = pygame.transform.scale(background_image, (window_width, windo
 # Fonts
 font = pygame.font.SysFont(None, 36)  # type: ignore
 
+# Play main menu soundtrack
+main_menu_soundtrack.play(-1)
 
 # Function to display text on the screen
 def draw_text(text, color, x, y):
@@ -51,48 +58,9 @@ def main_menu():
     button_margin = 20
     row_height = button_height + button_margin
     top_margin = 180  # Adjust this value to lower the buttons
-
+    difficulty = TRAINING_PARAMETERS["DIFFICULTY"]["orange"] # type: ignore
     while True:
         window_surface.blit(background_image, (0, 0))
-
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == MOUSEBUTTONDOWN:
-                x, y = pygame.mouse.get_pos()
-                if interactables_orange_button_rect.collidepoint(x, y):
-                    if TRAINING_PARAMETERS["INTERACTABLES"]:
-                        TRAINING_PARAMETERS["INTERACTABLES"][0] = "Human" if TRAINING_PARAMETERS["INTERACTABLES"][0] == "Bot" else "Bot"  # type: ignore
-                    else:
-                        TRAINING_PARAMETERS["INTERACTABLES"].append("Bot")  # type: ignore
-                elif interactables_white_button_rect.collidepoint(x, y):
-                    if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1:  # type: ignore
-                        TRAINING_PARAMETERS["INTERACTABLES"][1] = "Human" if TRAINING_PARAMETERS["INTERACTABLES"][1] == "Bot" else "Bot"  # type: ignore
-                    else:
-                        TRAINING_PARAMETERS["INTERACTABLES"].append("Bot")  # type: ignore
-                elif difficulty_button_rect.collidepoint(x, y):
-                    TRAINING_PARAMETERS["DIFFICULTY"] = (TRAINING_PARAMETERS["DIFFICULTY"] % 10) + 1  # type: ignore
-                elif stupidity_button_rect.collidepoint(x, y):
-                    TRAINING_PARAMETERS["STUPIDITY"] = round(min(TRAINING_PARAMETERS["STUPIDITY"] + 0.1, 2.0), 2)  # type: ignore
-                elif sparsity_button_rect.collidepoint(x, y):
-                    TRAINING_PARAMETERS["USE_SPARSITY"] = not TRAINING_PARAMETERS["USE_SPARSITY"]
-                elif max_operations_button_rect.collidepoint(x, y):
-                    if not TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
-                        TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = 10000
-                    elif TRAINING_PARAMETERS["MAX_N_OPERATIONS"] < 1000000:  # type: ignore
-                        TRAINING_PARAMETERS["MAX_N_OPERATIONS"] += int(TRAINING_PARAMETERS["MAX_N_OPERATIONS"] / 2.0) if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None  # type: ignore
-                    else:
-                        TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = None
-                elif start_button_rect.collidepoint(x, y):
-                    if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 0:  # type: ignore
-                        TRAINING_PARAMETERS["INTERACTABLES"][0] = "orange" if TRAINING_PARAMETERS["INTERACTABLES"][0] == "Human" else "Bot"  # type: ignore
-                    if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1:  # type: ignore
-                        TRAINING_PARAMETERS["INTERACTABLES"][1] = "white" if TRAINING_PARAMETERS["INTERACTABLES"][1] == "Human" else "Bot"  # type: ignore
-                    TRAINING_PARAMETERS["INTERACTABLES"] = [x for x in TRAINING_PARAMETERS["INTERACTABLES"] if x != "Bot"]  # type: ignore
-
-                    main()
-                    return
 
         # Player Selection Buttons
         interactables_orange_button_rect = pygame.Rect(50, top_margin, button_width, button_height)
@@ -117,7 +85,7 @@ def main_menu():
         draw_rounded_button(
             difficulty_button_rect,
             SOFT_BLUE,
-            "Difficulty: " + str(TRAINING_PARAMETERS["DIFFICULTY"]),
+            "Difficulty: " + str(difficulty),
             WHITE,
         )
 
@@ -154,6 +122,67 @@ def main_menu():
 
         start_button_rect = pygame.Rect(250, top_margin + 4 * row_height, button_width, button_height)
         draw_rounded_button(start_button_rect, SOFT_BLUE, "Start Game", WHITE)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type in [MOUSEMOTION, MOUSEBUTTONDOWN]:
+                x, y = pygame.mouse.get_pos()
+                if interactables_orange_button_rect.collidepoint(x, y):
+                    if event.type == MOUSEBUTTONDOWN:
+                        click_sound.play()
+                        if TRAINING_PARAMETERS["INTERACTABLES"]:
+                            TRAINING_PARAMETERS["INTERACTABLES"][0] = "Human" if TRAINING_PARAMETERS["INTERACTABLES"][0] == "Bot" else "Bot"  # type: ignore
+                        else:
+                            TRAINING_PARAMETERS["INTERACTABLES"].append("Bot")  # type: ignore
+                elif interactables_white_button_rect.collidepoint(x, y):
+                    if event.type == MOUSEBUTTONDOWN:
+                        click_sound.play()
+                        if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1:  # type: ignore
+                            TRAINING_PARAMETERS["INTERACTABLES"][1] = "Human" if TRAINING_PARAMETERS["INTERACTABLES"][1] == "Bot" else "Bot"  # type: ignore
+                        else:
+                            TRAINING_PARAMETERS["INTERACTABLES"].append("Bot")  # type: ignore
+
+                elif difficulty_button_rect.collidepoint(x, y):
+                    if event.type == MOUSEBUTTONDOWN:
+                        click_sound.play()
+                        difficulty = (difficulty % 10) + 1  # type: ignore
+
+                elif stupidity_button_rect.collidepoint(x, y):
+                    if event.type == MOUSEBUTTONDOWN:
+                        click_sound.play()
+                        TRAINING_PARAMETERS["STUPIDITY"] = round(min(TRAINING_PARAMETERS["STUPIDITY"] + 0.1, 2.0), 2)  # type: ignore
+
+                elif sparsity_button_rect.collidepoint(x, y):
+                    if event.type == MOUSEBUTTONDOWN:
+                        click_sound.play()
+                        TRAINING_PARAMETERS["USE_SPARSITY"] = not TRAINING_PARAMETERS["USE_SPARSITY"]
+
+                elif max_operations_button_rect.collidepoint(x, y):
+                    if event.type == MOUSEBUTTONDOWN:
+                        click_sound.play()
+                        if not TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
+                            TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = 10000
+                        elif TRAINING_PARAMETERS["MAX_N_OPERATIONS"] < 1000000:  # type: ignore
+                            TRAINING_PARAMETERS["MAX_N_OPERATIONS"] += int(TRAINING_PARAMETERS["MAX_N_OPERATIONS"] / 2.0) if TRAINING_PARAMETERS["MAX_N_OPERATIONS"] is not None else None  # type: ignore
+                        else:
+                            TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = None
+
+                elif start_button_rect.collidepoint(x, y):
+                    if event.type == MOUSEBUTTONDOWN:
+                        click_sound.play()
+
+                        if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 0:  # type: ignore
+                            TRAINING_PARAMETERS["INTERACTABLES"][0] = "orange" if TRAINING_PARAMETERS["INTERACTABLES"][0] == "Human" else "Bot"  # type: ignore
+                        if len(TRAINING_PARAMETERS["INTERACTABLES"]) > 1:  # type: ignore
+                            TRAINING_PARAMETERS["INTERACTABLES"][1] = "white" if TRAINING_PARAMETERS["INTERACTABLES"][1] == "Human" else "Bot"  # type: ignore
+                        TRAINING_PARAMETERS["INTERACTABLES"] = [x for x in TRAINING_PARAMETERS["INTERACTABLES"] if x != "Bot"]  # type: ignore
+
+                        TRAINING_PARAMETERS["DIFFICULTY"]["orange"] = difficulty  # type: ignore
+                        TRAINING_PARAMETERS["DIFFICULTY"]["white"] = difficulty # type: ignore
+                        main()
+                        return
+
 
         pygame.display.update()
 
