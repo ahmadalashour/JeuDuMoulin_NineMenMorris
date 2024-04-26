@@ -34,7 +34,7 @@ class Board:
         sid (int): Id of the next piece to be added to the board.
         is_draw (bool): Whether the game is a draw.
     """
-    
+
     formed_mills = []
     current_mills = []
     turn: Turn = "orange"

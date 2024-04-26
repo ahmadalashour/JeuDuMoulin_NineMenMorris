@@ -22,6 +22,7 @@ class MinMaxAgent:
 
     max_n_samples: Optional[int] = None
     render_steps: int = 10
+
     @staticmethod
     def generate_possible_moves(board: Board) -> list[tuple[int | None, "Node", int]]:
         """Method to generate all possible moves for the agent.
@@ -88,7 +89,9 @@ class MinMaxAgent:
 
         return sparsity_eval + n_pieces_eval + entropy
 
-    def make_move(self, board: Board, move: tuple[int | None, "Node", int], render: bool = True) -> Optional[bool]:
+    def make_move(
+        self, board: Board, move: tuple[int | None, "Node", int], render: bool = True
+    ) -> Optional[bool]:
         """Method to make a move on the board.
 
         Args:

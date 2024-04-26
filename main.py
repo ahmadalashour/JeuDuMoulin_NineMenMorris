@@ -37,6 +37,7 @@ font = pygame.font.SysFont(None, 36)  # type: ignore
 # Play main menu soundtrack
 main_menu_soundtrack.play(-1)
 
+
 # Function to display text on the screen
 def draw_text(text, color, x, y):
     text_surface = font.render(text, True, color)
@@ -59,7 +60,7 @@ def main_menu():
     button_margin = 20
     row_height = button_height + button_margin
     top_margin = 180  # Adjust this value to lower the buttons
-    difficulty = TRAINING_PARAMETERS["DIFFICULTY"]["orange"] # type: ignore
+    difficulty = TRAINING_PARAMETERS["DIFFICULTY"]["orange"]  # type: ignore
     while True:
         window_surface.blit(background_image, (0, 0))
 
@@ -180,11 +181,10 @@ def main_menu():
                         TRAINING_PARAMETERS["INTERACTABLES"] = [x for x in TRAINING_PARAMETERS["INTERACTABLES"] if x != "Bot"]  # type: ignore
 
                         TRAINING_PARAMETERS["DIFFICULTY"]["orange"] = difficulty  # type: ignore
-                        TRAINING_PARAMETERS["DIFFICULTY"]["white"] = difficulty # type: ignore
+                        TRAINING_PARAMETERS["DIFFICULTY"]["white"] = difficulty  # type: ignore
                         main_menu_soundtrack.stop()
                         main()
                         return
-
 
         pygame.display.update()
 
