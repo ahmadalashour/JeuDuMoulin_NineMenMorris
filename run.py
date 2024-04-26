@@ -18,6 +18,10 @@ def main():
         max_n_samples = int(
             np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"])
         )
+    move_sound = pygame.mixer.Sound("assets/move_sound.mp3")
+    background_music = pygame.mixer.Sound("assets/background_music.mp3")
+    background_music.set_volume(0.6)
+    background_music.play(-1)
 
     agents = {color: (MinMaxAgent(max_n_samples) if color not in board.interactables else HumanAgent()) for color in board.available_pieces.keys()}  # type: ignore
 
@@ -46,6 +50,8 @@ def main():
                     if board.turn in board.interactables:  # type: ignore
                         if isinstance(agents[board.turn], HumanAgent):
                             move = agents[board.turn].move(event, board)  # type: ignore
+                            if move is not None:
+                                move_sound.play()
                             if can_add:
 
                                 if move is not None:
@@ -65,6 +71,7 @@ def main():
                         beta=float("inf"),
                     )
                     move = agents[board.turn].make_move(board, best_move, render=TRAINING_PARAMETERS["RENDER"])  # type: ignore
+                    move_sound.play()
                     if can_add:
                         if move is not None:
                             latest_moves.append(move)
