@@ -46,7 +46,6 @@ def main():
                             move = agents[board.turn].move(event, board)  # type: ignore
                             if can_add:
                                 latest_moves.append(move)
-
         board.update_draggable_pieces()
         if TRAINING_PARAMETERS["RENDER"]:
             board.draw(screen, CELL_SIZE, MARGIN)
@@ -64,7 +63,7 @@ def main():
                     if can_add:
                         latest_moves.append(move)
 
-        if not can_add and board.phase != "placing":
+        if not can_add and board.phase == "moving":
             can_add = True
 
         if len(latest_moves) > MIN_DRAW_MOVES and not any(latest_moves[-MIN_DRAW_MOVES:]) and board.phase == "moving":
