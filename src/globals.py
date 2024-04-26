@@ -87,7 +87,7 @@ for edge in EDGES:
 
 TRAINING_PARAMETERS = dict(
     # Global variables
-    RENDER=True,
+    RENDER=False,
     INTERACTABLES=[],
     DIFFICULTY={
         "orange": 5,
@@ -104,3 +104,5 @@ EVALUATION_COEFFICIENTS = {
     "n_mills": 0.3,
     "entropy": 1.0,
 }
+
+N_REPITITIONS = 1

@@ -12,9 +12,9 @@ def main():
     """Main function to run the game."""
     if TRAINING_PARAMETERS["RENDER"]:
         screen = pygame.display.set_mode((7 * CELL_SIZE + MARGIN * 5, 7 * CELL_SIZE + MARGIN))
-        
     board = Board(interactables=TRAINING_PARAMETERS["INTERACTABLES"], screen=screen, margin=MARGIN, cell_size=CELL_SIZE)  # type: ignore
-    max_n_samples = {"orange" : None, "white" : None}
+    
+    max_n_samples = {"orange": None, "white": None}
     if TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
         max_n_samples = {
             turn: int(
@@ -32,7 +32,6 @@ def main():
 
     board.latest_phase = board.phase
 
-    
     print("Starting game : ")
     print("Difficulty : ", TRAINING_PARAMETERS["DIFFICULTY"])
     print("Interactables : ", TRAINING_PARAMETERS["INTERACTABLES"])

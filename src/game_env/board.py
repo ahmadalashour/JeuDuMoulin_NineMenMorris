@@ -241,9 +241,7 @@ class Board:
             )
 
         # Display score and turn with smaller font and appropriate colors
-        score_text = (
-            f"Orange: {len(self.pieces['orange'])}  White: {len(self.pieces['white'])}"
-        )
+        score_text = f"Orange: {len(self.pieces['orange'])}  White: {len(self.pieces['white'])}"
         score_display = pygame.font.Font(None, 36).render(score_text, True, (255, 255, 255))
         self.screen.blit(score_display, (self.screen.get_width() - score_display.get_width() - 10, 10))
 
@@ -315,7 +313,7 @@ class Board:
         return f"Board(turn={self.turn}, phase={self.phase})"
 
     def _check_game_over(self):
-        game_over_result =  (
+        game_over_result = (
             self.available_pieces["orange"] == 0
             and self.available_pieces["white"] == 0
             and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
