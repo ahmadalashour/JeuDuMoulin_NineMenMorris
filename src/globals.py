@@ -87,13 +87,13 @@ for edge in EDGES:
 
 TRAINING_PARAMETERS = dict(
     # Global variables
-    RENDER=False,
+    RENDER=True,
     INTERACTABLES=[],
     DIFFICULTY={
         "orange": 5,
         "white": 5,
     },
-    STUPIDITY=1.0,
+    STUPIDITY=0.0,
     USE_SPARSITY=True,
     MAX_N_OPERATIONS=None,
 )

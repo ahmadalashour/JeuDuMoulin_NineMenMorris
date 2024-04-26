@@ -58,7 +58,7 @@ class MinMaxAgent:
         return generated_moves
 
     @staticmethod
-    def evaluate(board: Board):  # Reward function
+    def evaluate(board: Board) -> float: # Reward function
         """Method to evaluate the board state.
 
         Args:

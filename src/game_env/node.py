@@ -26,7 +26,7 @@ class Node:
         return self._y
 
     @classmethod
-    def from_coords(cls, x: int, y: int):
+    def from_coords(cls, x: int, y: int) -> "Node":  # Bad habit
         """Method to create a node from coordinates.
 
         Args:
