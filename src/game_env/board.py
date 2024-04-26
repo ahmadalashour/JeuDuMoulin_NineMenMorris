@@ -242,7 +242,7 @@ class Board:
 
         # Display score and turn with smaller font and appropriate colors
         score_text = (
-            f"Orange: {8 - self.available_pieces['orange']}  White: {8 - self.available_pieces['white']}"
+            f"Orange: {len(self.pieces['orange'])}  White: {len(self.pieces['white'])}"
         )
         score_display = pygame.font.Font(None, 36).render(score_text, True, (255, 255, 255))
         self.screen.blit(score_display, (self.screen.get_width() - score_display.get_width() - 10, 10))
