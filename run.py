@@ -45,7 +45,10 @@ def main():
                         if isinstance(agents[board.turn], HumanAgent):
                             move = agents[board.turn].move(event, board)  # type: ignore
                             if can_add:
-                                latest_moves.append(move)
+ 
+                                if move is not None:
+                                    latest_moves.append(move)
+
         board.update_draggable_pieces()
         if TRAINING_PARAMETERS["RENDER"]:
             board.draw(screen, CELL_SIZE, MARGIN)
@@ -61,7 +64,8 @@ def main():
                     )
                     move = agents[board.turn].make_move(board, best_move)  # type: ignore
                     if can_add:
-                        latest_moves.append(move)
+                        if move is not None:
+                            latest_moves.append(move)
 
         if not can_add and board.phase == "moving":
             can_add = True

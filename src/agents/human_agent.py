@@ -30,6 +30,10 @@ class HumanAgent:
                 if legality == "move":
                     board.turn = "orange" if board.turn == "white" else "white"
                     break
+            
+            if legality:
+                return False
+
         else:
             other_turn = "orange" if board.turn == "white" else "white"
             removed = False
@@ -38,10 +42,8 @@ class HumanAgent:
                     removed = True
                     board.pieces[other_turn].remove(piece)
                     board.available_nodes.append(piece.piece.node)
-                    break
             if removed:
                 self._remove_piece = False
                 board.turn = "orange" if board.turn == "white" else "white"
                 board.phase = board.latest_phase
                 return True
-        return False

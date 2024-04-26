@@ -116,7 +116,7 @@ class DraggablePiece:
                         return True
         return False
 
-    def handle_event(self, event: pygame.event.Event, board: "Board"):
+    def handle_event(self, event: pygame.event.Event, board: "Board") -> Action | None:
         """Handle the event of moving the piece on the board."""
         if not self.interactable:
             return
