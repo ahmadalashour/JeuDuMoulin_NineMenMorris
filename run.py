@@ -27,7 +27,7 @@ def main():
     background_music.set_volume(0.6)
     background_music.play(-1)
 
-    agents = {color: (MinMaxAgent(max_n_samples) if color not in board.interactables else HumanAgent()) for color in board.available_pieces.keys()}  # type: ignore
+    agents = {color: (MinMaxAgent(max_n_samples[color]) if color not in board.interactables else HumanAgent()) for color in board.available_pieces.keys()}  # type: ignore
 
     board.latest_phase = board.phase
 
