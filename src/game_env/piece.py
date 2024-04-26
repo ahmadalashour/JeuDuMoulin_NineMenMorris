@@ -81,7 +81,9 @@ class DraggablePiece:
             or (nodes[1] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[1]])
             or (nodes[0] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[0]])
         )
-        return edge_check and (nodes[0].x == nodes[1].x == nodes[2].x or nodes[0].y == nodes[1].y == nodes[2].y)
+        return edge_check and (
+            nodes[0].x == nodes[1].x == nodes[2].x or nodes[0].y == nodes[1].y == nodes[2].y
+        )
 
     def copy_ai(self):
         """Create a copy of the piece for the AI to use."""
@@ -94,7 +96,9 @@ class DraggablePiece:
 
     def removable(self, board: "Board") -> bool:
         """Check if the piece can be removed from the board."""
-        return self.mill_count == 0 or all([piece.mill_count > 0 for piece in board.pieces[self.piece.player] if not piece.first_move])
+        return self.mill_count == 0 or all(
+            [piece.mill_count > 0 for piece in board.pieces[self.piece.player] if not piece.first_move]
+        )
 
     def handle_remove_event(self, event: pygame.event.Event, board: "Board") -> bool:
         """Handle the event of removing the piece from the board."""
@@ -226,24 +230,45 @@ class DraggablePiece:
             player_controlled_nodes = [piece.piece.node for piece in board.pieces[self.piece.player]]
 
             # Check if edge is legal
-            if not self.first_move and len(player_controlled_nodes) > 3 and (self.starting_node, new_node) not in EDGES and (new_node, self.starting_node) not in EDGES:
+            if (
+                not self.first_move
+                and len(player_controlled_nodes) > 3
+                and (self.starting_node, new_node) not in EDGES
+                and (new_node, self.starting_node) not in EDGES
+            ):
                 return "undo"
 
             new_mills = []
             for second_node in NODE_LOOKUP[new_node]:
                 if second_node in player_controlled_nodes and second_node != self.starting_node:
                     for third_node in NODE_LOOKUP[second_node] + NODE_LOOKUP[new_node]:
-                        if third_node in player_controlled_nodes and third_node != self.starting_node and third_node != new_node and third_node != second_node:
+                        if (
+                            third_node in player_controlled_nodes
+                            and third_node != self.starting_node
+                            and third_node != new_node
+                            and third_node != second_node
+                        ):
                             if self.is_mill((new_node, second_node, third_node)):
-                                second_piece = [piece for piece in board.pieces[self.piece.player] if piece.piece.node == second_node][0]
-                                third_piece = [piece for piece in board.pieces[self.piece.player] if piece.piece.node == third_node][0]
+                                second_piece = [
+                                    piece
+                                    for piece in board.pieces[self.piece.player]
+                                    if piece.piece.node == second_node
+                                ][0]
+                                third_piece = [
+                                    piece
+                                    for piece in board.pieces[self.piece.player]
+                                    if piece.piece.node == third_node
+                                ][0]
 
                                 new_mill = [self, second_piece, third_piece]
 
                                 # Sort the mill
                                 new_mill.sort()
                                 if new_mill not in new_mills:
-                                    if new_mill not in board.formed_mills or len(board.pieces[board.turn]) == 3:
+                                    if (
+                                        new_mill not in board.formed_mills
+                                        or len(board.pieces[board.turn]) == 3
+                                    ):
                                         new_mills.append(new_mill)
                                         if not just_check:
                                             board.formed_mills.append(new_mill)

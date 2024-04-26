@@ -4,8 +4,7 @@ import time
 from typing import Literal, TYPE_CHECKING
 from src.game_env.piece import DraggablePiece, Piece  # type: ignore
 
-if TYPE_CHECKING:
-    from src.game_env.node import Node
+from src.game_env.node import Node
 from src.globals import EDGES, NODES, Turn
 import contextlib
 
@@ -17,6 +16,10 @@ class Board:
         interactables (list[str], optional): List of players that can interact with the board. Defaults to None.
 
     Attributes:
+
+        screen (pygame.Surface): The screen to draw the board on.
+        cell_size (int): The size of each cell.
+        margin (int): The margin around the board.
         pieces (dict[str, list[DraggablePiece]]): Dictionary of player pieces.
         available_pieces (dict[str, int]): Dictionary of available pieces for each player.
         timers (dict[str, float]): Dictionary of timers for each operation.
@@ -43,7 +46,16 @@ class Board:
     sid: int = 0
     is_draw: bool = False
 
-    def __init__(self, interactables: list[Literal["orange", "white"]] | None = None):
+    def __init__(
+        self,
+        screen: pygame.Surface,
+        cell_size: int,
+        margin: int,
+        interactables: list[Literal["orange", "white"]] | None = None,
+    ):
+        self.screen = screen
+        self.cell_size = cell_size
+        self.margin = margin
         self.interactables = interactables or []
         self.pieces = {
             "orange": [
@@ -73,11 +85,15 @@ class Board:
 
     def ai_copy(self):
         """Create a copy of the board for the AI to use."""
-        new_board = Board([])
-        new_board.pieces = {player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces}
+        new_board = Board(screen=self.screen, cell_size=self.cell_size, margin=self.margin)
+        new_board.pieces = {
+            player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces
+        }
         id_piece_map = {piece.id: piece for player in new_board.pieces.values() for piece in player}
 
-        new_board.available_pieces = {player: self.available_pieces[player] for player in self.available_pieces}
+        new_board.available_pieces = {
+            player: self.available_pieces[player] for player in self.available_pieces
+        }
         new_board.turn = self.turn
         new_board.phase = self.phase
         new_board.sid = self.sid
@@ -132,7 +148,7 @@ class Board:
             self.phase = "moving"
         self._end_timer("update_draggable_pieces")
 
-    def draw(self, screen, cell_size: int, margin: int):
+    def draw(self):
         """Draw the board on the screen.
 
         Args:
@@ -143,21 +159,21 @@ class Board:
         self._start_timer("draw")
         # Load background image
         background = pygame.image.load("assets/background.jpg")
-        background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
-        screen.blit(background, (0, 0))
+        background = pygame.transform.scale(background, (self.screen.get_width(), self.screen.get_height()))
+        self.screen.blit(background, (0, 0))
 
         # Draw edges, legal nodes, numbers, and letters
         for edge in EDGES:
             pygame.draw.line(
-                screen,
+                self.screen,
                 (0, 0, 0),
                 (
-                    edge[0].x * cell_size + cell_size // 2 + margin,
-                    edge[0].y * cell_size + cell_size // 2,
+                    edge[0].x * self.cell_size + self.cell_size // 2 + self.margin,
+                    edge[0].y * self.cell_size + self.cell_size // 2,
                 ),
                 (
-                    edge[1].x * cell_size + cell_size // 2 + margin,
-                    edge[1].y * cell_size + cell_size // 2,
+                    edge[1].x * self.cell_size + self.cell_size // 2 + self.margin,
+                    edge[1].y * self.cell_size + self.cell_size // 2,
                 ),
                 2,
             )
@@ -166,13 +182,13 @@ class Board:
         for node in NODES:
             # Draw a small circle centered at the node's position
             pygame.draw.circle(
-                screen,
+                self.screen,
                 (0, 0, 0),
                 (
-                    node.x * cell_size + cell_size // 2 + margin,
-                    node.y * cell_size + cell_size // 2,
+                    node.x * self.cell_size + self.cell_size // 2 + self.margin,
+                    node.y * self.cell_size + self.cell_size // 2,
                 ),
-                cell_size // 8,
+                self.cell_size // 8,
             )
         # Draw pieces that are not being dragged
         for player in self.pieces:
@@ -180,14 +196,14 @@ class Board:
                 if piece.piece.node is not None and not piece.dragging:
                     # Make the icons a little smaller
                     smaller_icon = pygame.transform.scale(
-                        piece.piece.surface(cell_size),
-                        (int(cell_size * 0.8), int(cell_size * 0.8)),
+                        piece.piece.surface(self.cell_size),
+                        (int(self.cell_size * 0.8), int(self.cell_size * 0.8)),
                     )
-                    screen.blit(
+                    self.screen.blit(
                         smaller_icon,
                         (
-                            piece.piece.node.x * cell_size + margin + cell_size * 0.1,
-                            piece.piece.node.y * cell_size + cell_size * 0.1,
+                            piece.piece.node.x * self.cell_size + self.margin + self.cell_size * 0.1,
+                            piece.piece.node.y * self.cell_size + self.cell_size * 0.1,
                         ),
                     )
 
@@ -197,14 +213,14 @@ class Board:
                 if piece.piece.node is not None and piece.dragging:
                     # Make the icons a little smaller
                     smaller_icon = pygame.transform.scale(
-                        piece.piece.surface(cell_size),
-                        (int(cell_size * 0.8), int(cell_size * 0.8)),
+                        piece.piece.surface(self.cell_size),
+                        (int(self.cell_size * 0.8), int(self.cell_size * 0.8)),
                     )
-                    screen.blit(
+                    self.screen.blit(
                         smaller_icon,
                         (
-                            piece.piece.node.x * cell_size + margin + cell_size * 0.1,
-                            piece.piece.node.y * cell_size + cell_size * 0.1,
+                            piece.piece.node.x * self.cell_size + self.margin + self.cell_size * 0.1,
+                            piece.piece.node.y * self.cell_size + self.cell_size * 0.1,
                         ),
                     )
 
@@ -212,26 +228,32 @@ class Board:
         for i in range(7):
             number = str(i)
             text = pygame.font.Font(None, 48).render(number, True, (255, 255, 255))
-            screen.blit(text, (3 * margin // 4, (6 - i) * cell_size + cell_size // 2 - 10))
+            self.screen.blit(
+                text, (3 * self.margin // 4, (6 - i) * self.cell_size + self.cell_size // 2 - 10)
+            )
 
         # Draw letters at the bottom with bigger and white font
         for i, letter in enumerate("ABCDEFG"):
             text = pygame.font.Font(None, 48).render(letter, True, (255, 255, 255))
-            screen.blit(text, (i * cell_size + cell_size // 2 + margin - 10, 7 * cell_size))
+            self.screen.blit(
+                text, (i * self.cell_size + self.cell_size // 2 + self.margin - 10, 7 * self.cell_size)
+            )
 
         # Display score and turn with smaller font and appropriate colors
-        score_text = f"Orange: {8 - self.available_pieces['orange']}  White: {8 - self.available_pieces['white']}"
+        score_text = (
+            f"Orange: {8 - self.available_pieces['orange']}  White: {8 - self.available_pieces['white']}"
+        )
         score_display = pygame.font.Font(None, 36).render(score_text, True, (255, 255, 255))
-        screen.blit(score_display, (screen.get_width() - score_display.get_width() - 10, 10))
+        self.screen.blit(score_display, (self.screen.get_width() - score_display.get_width() - 10, 10))
 
         turn_text = f"Turn: {self.turn.capitalize()}"
         player_color = (255, 255, 255) if self.turn == "white" else (255, 165, 0)
         turn_display = pygame.font.Font(None, 36).render(turn_text, True, player_color)
-        screen.blit(
+        self.screen.blit(
             turn_display,
             (
-                screen.get_width() - turn_display.get_width() - 10,
-                screen.get_height() - 40,
+                self.screen.get_width() - turn_display.get_width() - 10,
+                self.screen.get_height() - 40,
             ),
         )
 
@@ -239,38 +261,40 @@ class Board:
         phase_text = f"Phase: {self.phase.capitalize()}"
         phase_color = (255, 255, 255) if self.phase == "capturing" else (0, 255, 0)
         phase_display = pygame.font.Font(None, 36).render(phase_text, True, phase_color)
-        screen.blit(
+        self.screen.blit(
             phase_display,
             (
-                screen.get_width() - phase_display.get_width() - 10,
-                screen.get_height() // 2 - phase_display.get_height() // 2,
+                self.screen.get_width() - phase_display.get_width() - 10,
+                self.screen.get_height() // 2 - phase_display.get_height() // 2,
             ),
         )
 
-        # Check if the game is over and display game over screen
+        # Check if the game is over and display game over self.screen
         if self.game_over:
             if self.is_draw:
                 game_over_text = pygame.font.Font(None, 72).render("Game Over: Draw!", True, (255, 255, 255))
             else:
                 winner = self.winner or ("Orange" if self.turn == "white" else "White")
-                game_over_text = pygame.font.Font(None, 72).render("Game Over: " + winner + " wins!", True, (255, 255, 255))
-            screen.blit(
+                game_over_text = pygame.font.Font(None, 72).render(
+                    "Game Over: " + winner + " wins!", True, (255, 255, 255)
+                )
+            self.screen.blit(
                 game_over_text,
                 (
-                    screen.get_width() // 2 - game_over_text.get_width() // 2,
-                    screen.get_height() // 2 - game_over_text.get_height() // 2,
+                    self.screen.get_width() // 2 - game_over_text.get_width() // 2,
+                    self.screen.get_height() // 2 - game_over_text.get_height() // 2,
                 ),
             )
         # Display "Thinking" next to non-interactable pieces during their turn
         for player in self.pieces:
             if player not in self.interactables and self.turn == player:  # type: ignore
                 thinking_text = pygame.font.Font(None, 24).render("Thinking", True, (255, 255, 255))
-                # display text to right of the screen, up if white, down if orange
-                screen.blit(
+                # display text to right of the self.screen, up if white, down if orange
+                self.screen.blit(
                     thinking_text,
                     (
-                        screen.get_width() - thinking_text.get_width() - 10,
-                        screen.get_height() - 2 * margin if player == "orange" else 2 * margin,
+                        self.screen.get_width() - thinking_text.get_width() - 10,
+                        self.screen.get_height() - 2 * self.margin if player == "orange" else 2 * self.margin,
                     ),
                 )
         # Update the display
@@ -290,4 +314,8 @@ class Board:
         return f"Board(turn={self.turn}, phase={self.phase})"
 
     def _check_game_over(self):
-        return self.available_pieces["orange"] == 0 and self.available_pieces["white"] == 0 and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
+        return (
+            self.available_pieces["orange"] == 0
+            and self.available_pieces["white"] == 0
+            and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
+        )

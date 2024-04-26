@@ -30,7 +30,7 @@ class HumanAgent:
                 if legality == "move":
                     board.turn = "orange" if board.turn == "white" else "white"
                     break
-            
+
             if legality:
                 return False
 

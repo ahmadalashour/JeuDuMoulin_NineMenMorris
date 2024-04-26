@@ -12,10 +12,12 @@ def main():
     """Main function to run the game."""
     if TRAINING_PARAMETERS["RENDER"]:
         screen = pygame.display.set_mode((7 * CELL_SIZE + MARGIN * 5, 7 * CELL_SIZE + MARGIN))
-    board = Board(interactables=TRAINING_PARAMETERS["INTERACTABLES"])  # type: ignore
+    board = Board(interactables=TRAINING_PARAMETERS["INTERACTABLES"], screen=screen, margin=MARGIN, cell_size=CELL_SIZE)  # type: ignore
     max_n_samples = None
     if TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
-        max_n_samples = int(np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"]))
+        max_n_samples = int(
+            np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"])
+        )
 
     agents = {color: (MinMaxAgent(max_n_samples) if color not in board.interactables else HumanAgent()) for color in board.available_pieces.keys()}  # type: ignore
 
@@ -34,7 +36,7 @@ def main():
     while True:  # Main game loop
         board.update_draggable_pieces()
         if TRAINING_PARAMETERS["RENDER"]:
-            board.draw(screen, CELL_SIZE, MARGIN)
+            board.draw()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -45,13 +47,13 @@ def main():
                         if isinstance(agents[board.turn], HumanAgent):
                             move = agents[board.turn].move(event, board)  # type: ignore
                             if can_add:
- 
+
                                 if move is not None:
                                     latest_moves.append(move)
 
         board.update_draggable_pieces()
         if TRAINING_PARAMETERS["RENDER"]:
-            board.draw(screen, CELL_SIZE, MARGIN)
+            board.draw()
 
         if board.turn not in board.interactables:  # type: ignore
             if not board.game_over:
@@ -62,7 +64,7 @@ def main():
                         alpha=float("-inf"),
                         beta=float("inf"),
                     )
-                    move = agents[board.turn].make_move(board, best_move)  # type: ignore
+                    move = agents[board.turn].make_move(board, best_move, render=TRAINING_PARAMETERS["RENDER"])  # type: ignore
                     if can_add:
                         if move is not None:
                             latest_moves.append(move)
@@ -70,7 +72,11 @@ def main():
         if not can_add and board.phase == "moving":
             can_add = True
 
-        if len(latest_moves) > MIN_DRAW_MOVES and not any(latest_moves[-MIN_DRAW_MOVES:]) and board.phase == "moving":
+        if (
+            len(latest_moves) > MIN_DRAW_MOVES
+            and not any(latest_moves[-MIN_DRAW_MOVES:])
+            and board.phase == "moving"
+        ):
             board.is_draw = True
 
 

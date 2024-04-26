@@ -103,7 +103,9 @@ def main_menu():
             WHITE,
         )
 
-        interactables_white_button_rect = pygame.Rect(50 + button_width + button_margin, top_margin, button_width, button_height)
+        interactables_white_button_rect = pygame.Rect(
+            50 + button_width + button_margin, top_margin, button_width, button_height
+        )
         draw_rounded_button(
             interactables_white_button_rect,
             SOFT_BLUE,
@@ -119,7 +121,9 @@ def main_menu():
             WHITE,
         )
 
-        stupidity_button_rect = pygame.Rect(50 + button_width + button_margin, top_margin + button_height * 2, button_width, button_height)
+        stupidity_button_rect = pygame.Rect(
+            50 + button_width + button_margin, top_margin + button_height * 2, button_width, button_height
+        )
         draw_rounded_button(
             stupidity_button_rect,
             SOFT_BLUE,

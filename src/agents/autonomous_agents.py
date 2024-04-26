@@ -3,10 +3,11 @@ from src.globals import NODE_LOOKUP
 from typing import TYPE_CHECKING, Optional, Any
 import numpy as np
 import dataclasses as dc
+from copy import deepcopy
+import pygame
 
 
-if TYPE_CHECKING:
-    from src.game_env.node import Node
+from src.game_env.node import Node
 
 from src.globals import TRAINING_PARAMETERS
 
@@ -20,7 +21,7 @@ class MinMaxAgent:
     """
 
     max_n_samples: Optional[int] = None
-
+    render_steps: int = 10
     @staticmethod
     def generate_possible_moves(board: Board) -> list[tuple[int | None, "Node", int]]:
         """Method to generate all possible moves for the agent.
@@ -42,7 +43,11 @@ class MinMaxAgent:
 
         elif board.phase == "moving":
             for piece in board.pieces[board.turn]:
-                for node in NODE_LOOKUP[piece.piece.node] if len(board.pieces[board.turn]) > 3 else board.available_nodes:
+                for node in (
+                    NODE_LOOKUP[piece.piece.node]
+                    if len(board.pieces[board.turn]) > 3
+                    else board.available_nodes
+                ):
                     legality = piece.check_legal_move(board=board, new_node=node, just_check=True)
                     if legality in ["move", "remove"]:
                         generated_moves.append((piece.id, node, legality))
@@ -71,7 +76,9 @@ class MinMaxAgent:
             for player in ["orange", "white"]:
                 for piece in board.pieces[player]:
                     if len(board.pieces[player]) > 3:
-                        availables = [node for node in NODE_LOOKUP[piece.piece.node] if node in board.available_nodes]
+                        availables = [
+                            node for node in NODE_LOOKUP[piece.piece.node] if node in board.available_nodes
+                        ]
                         sparsity_eval += len(availables) if player == "orange" else -len(availables)
 
         sparsity_eval = sparsity_eval / 3
@@ -81,8 +88,7 @@ class MinMaxAgent:
 
         return sparsity_eval + n_pieces_eval + entropy
 
-    @staticmethod
-    def make_move(board: Board, move: tuple[int | None, "Node", int]):
+    def make_move(self, board: Board, move: tuple[int | None, "Node", int], render: bool = True) -> Optional[bool]:
         """Method to make a move on the board.
 
         Args:
@@ -95,9 +101,31 @@ class MinMaxAgent:
             return
 
         moved_piece_id, move_node, _ = move
-        moved_piece = [piece for piece in board.pieces[board.turn] if piece.id == moved_piece_id][0] if moved_piece_id is not None else None
+        moved_piece = (
+            [piece for piece in board.pieces[board.turn] if piece.id == moved_piece_id][0]
+            if moved_piece_id is not None
+            else None
+        )
         other_turn = "orange" if board.turn == "white" else "white"
         if moved_piece is not None:
+            backup_start_node = deepcopy(moved_piece.piece.node)
+            if render:
+                n_steps = 10
+                start_node = deepcopy(moved_piece.piece.node)
+                end_node = deepcopy(move_node)
+                vector = end_node - start_node
+                current_node = deepcopy(start_node)
+
+                # Simulate move
+                for i in range(self.render_steps):
+                    current_node = Node.from_coords(
+                        start_node.x + vector[0] / self.render_steps * (i + 1),
+                        start_node.y + vector[1] / self.render_steps * (i + 1),
+                    )
+                    moved_piece.piece.node = current_node
+                    board.draw()
+
+            moved_piece.piece.node = backup_start_node
             move_result = moved_piece.move(move_node, board)
             if move_result == "remove":
                 board.phase = "capturing"
@@ -149,7 +177,7 @@ class MinMaxAgent:
             best_move = None
             for move in possible_moves:
                 board_copy = board.ai_copy()
-                self.make_move(board_copy, move)
+                self.make_move(board_copy, move, render=False)
                 _, value = self.minimax(board_copy, depth - 1, alpha, beta)
                 if value > max_value or best_move is None:
                     max_value = value
@@ -164,7 +192,7 @@ class MinMaxAgent:
 
             for move in possible_moves:
                 board_copy = board.ai_copy()
-                self.make_move(board_copy, move)
+                self.make_move(board_copy, move, render=False)
                 _, value = self.minimax(board_copy, depth - 1, alpha, beta)
                 if value < min_value or best_move is None:
                     min_value = value
