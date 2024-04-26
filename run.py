@@ -66,7 +66,7 @@ def main():
                 if isinstance(agents[board.turn], MinMaxAgent):
                     best_move, _ = agents[board.turn].minimax(  # type: ignore
                         board,
-                        depth=TRAINING_PARAMETERS["DIFFICULTY"],  # type: ignore
+                        depth=TRAINING_PARAMETERS["DIFFICULTY"][board.turn],  # type: ignore
                         alpha=float("-inf"),
                         beta=float("inf"),
                     )
