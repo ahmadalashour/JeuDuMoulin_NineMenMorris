@@ -15,9 +15,10 @@ def main():
     board = Board(interactables=TRAINING_PARAMETERS["INTERACTABLES"], screen=screen, margin=MARGIN, cell_size=CELL_SIZE)  # type: ignore
     max_n_samples = None
     if TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
-        max_n_samples = int(
-            np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"]) # type: ignore
-        )
+        max_n_samples = {turn: int(
+            np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) / TRAINING_PARAMETERS["DIFFICULTY"][turn]) # type: ignore
+              # type: ignore
+        )for turn in ["orange", "white"]}
     move_sound = pygame.mixer.Sound("assets/move_sound.mp3")
     background_music = pygame.mixer.Sound("assets/background_music.mp3")
     background_music.set_volume(0.6)
