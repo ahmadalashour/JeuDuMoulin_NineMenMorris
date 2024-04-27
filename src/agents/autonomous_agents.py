@@ -69,7 +69,7 @@ class MinMaxAgent:
         Returns:
             float: The evaluation of the board state.
         """
-        
+
         game_phase = "placing"
         if board.phase == "moving":
             game_phase = "moving"
@@ -174,7 +174,7 @@ class MinMaxAgent:
             return True
 
         return False
-    
+
     def init_worker():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -229,7 +229,7 @@ class MinMaxAgent:
         extreme_value = float("-inf") if maximizing_player else float("inf")
         best_move = None
 
-        if multicore <= 1 and multicore!=-1:
+        if multicore <= 1 and multicore != -1:
             for move in possible_moves:
                 best_move, extreme_value, alpha, beta = self.check_single_move(
                     board=board,
@@ -247,8 +247,9 @@ class MinMaxAgent:
                     break
         else:
             with Pool(cpu_count() if multicore == -1 else multicore) as pool:
-                processes =  [pool.apply_async(
-                    self.check_single_move,
+                processes = [
+                    pool.apply_async(
+                        self.check_single_move,
                         (
                             board.ai_copy(),
                             move,
@@ -261,9 +262,10 @@ class MinMaxAgent:
                             cumulative_n_samples,
                             best_move,
                         ),
-                )
-                for move in possible_moves]
-                try: 
+                    )
+                    for move in possible_moves
+                ]
+                try:
                     for process in processes:
                         result = process.get()
                         move, value, alpha, beta = result
@@ -299,7 +301,7 @@ class MinMaxAgent:
         cumulative_n_samples: int,
         best_move: Any,
     ) -> tuple[Any, float, float, float]:
-        
+
         board_copy = board.ai_copy()
         self.make_move(board_copy, move, render=False)
         _, value = self.minimax(
