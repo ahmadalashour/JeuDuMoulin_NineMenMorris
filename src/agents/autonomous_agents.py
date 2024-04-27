@@ -76,12 +76,15 @@ class MinMaxAgent:
                         ]
                         sparsity_eval += len(availables) if player == "orange" else -len(availables)
 
-        sparsity_eval = sparsity_eval
-        n_pieces_eval = len(board.pieces["orange"]) - len(board.pieces["white"])
+        sparsity_eval = sparsity_eval / 36.0 # in the range [-1, 1]
+        n_pieces_eval = len(board.pieces["orange"]) - len(board.pieces["white"])  / 9.0 # in the range [-1, 1]
         white_mills = [mill for mill in board.current_mills if mill[0][0] in board.piece_mapping.keys() and board.piece_mapping[mill[0][0]].piece.player == "white"]
         orange_mills = [mill for mill in board.current_mills if mill[0][0] in board.piece_mapping.keys() and board.piece_mapping[mill[0][0]].piece.player == "orange"]
-        n_mills_eval = len(orange_mills) - len(white_mills)
-        entropy = np.random.normal(0, TRAINING_PARAMETERS["STUPIDITY"])  # type: ignore
+        n_mills_eval = len(orange_mills) - len(white_mills) / 4.0 # in the range [-1, 1]
+
+        entropy = 0 
+        if TRAINING_PARAMETERS["STUPIDITY"] > 0:
+            entropy = np.random.normal(0, TRAINING_PARAMETERS["STUPIDITY"]) / TRAINING_PARAMETERS["STUPIDITY"] # in the range [-1, 1]
 
         return (
             EVALUATION_COEFFICIENTS["sparsity"] * sparsity_eval

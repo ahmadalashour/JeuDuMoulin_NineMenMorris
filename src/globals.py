@@ -94,14 +94,14 @@ TRAINING_PARAMETERS = dict(
         "white": 5,
     },
     STUPIDITY=0.0,
-    USE_SPARSITY=True,
+    USE_SPARSITY=False,
     MAX_N_OPERATIONS=None,
 )
 
 EVALUATION_COEFFICIENTS = {
     "sparsity": 0.0,
     "n_pieces": 1.0,
-    "n_mills": 0.5,
+    "n_mills": 0.8,
     "entropy": 0.0,
 }
 
