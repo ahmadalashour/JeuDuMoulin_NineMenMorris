@@ -15,7 +15,6 @@ class MinMaxAgent:
         max_n_samples (int): The maximum number of samples to consider.
     """
 
-    max_n_samples: Optional[int] = None
     render_steps: int = 10
 
     @staticmethod
@@ -79,8 +78,8 @@ class MinMaxAgent:
 
         sparsity_eval = sparsity_eval
         n_pieces_eval = len(board.pieces["orange"]) - len(board.pieces["white"])
-        white_mills = [mill for mill in board.current_mills if mill[0].piece.player == "white"]
-        orange_mills = [mill for mill in board.current_mills if mill[0].piece.player == "orange"]
+        white_mills = [mill for mill in board.current_mills if mill[0][0] in board.piece_mapping.keys() and board.piece_mapping[mill[0][0]].piece.player == "white"]
+        orange_mills = [mill for mill in board.current_mills if mill[0][0] in board.piece_mapping.keys() and board.piece_mapping[mill[0][0]].piece.player == "orange"]
         n_mills_eval = len(orange_mills) - len(white_mills)
         entropy = np.random.normal(0, TRAINING_PARAMETERS["STUPIDITY"])  # type: ignore
 
@@ -146,7 +145,7 @@ class MinMaxAgent:
 
         return False
 
-    def minimax(self, board: Board, depth: int, alpha: float, beta: float) -> tuple[Any, float]:
+    def minimax(self, board: Board, depth: int, alpha: float, beta: float, fanning: Optional[int] = None) -> tuple[Any, float]:
         """Method to perform the minimax algorithm.
 
         Args:
@@ -154,6 +153,7 @@ class MinMaxAgent:
             depth (int): The depth to perform the minimax to.
             alpha (float): The alpha value.
             beta (float): The beta value.
+            fanning (Optional[int], optional): The number of samples to consider. Defaults to None.
 
         Returns:
             tuple[int | None, float]: The best move and its value.
@@ -166,13 +166,19 @@ class MinMaxAgent:
         maximizing_player = board.turn == "orange"
 
         possible_moves = self.generate_possible_moves(board)
-        if self.max_n_samples and self.max_n_samples > 0:
+        next_n_fanning = None
+        if fanning and fanning > 0:
             n_samples = min(
                 len(possible_moves),
-                self.max_n_samples,
+                fanning,
             )
+            
+            if depth > 1:
+                next_n_fanning =  int(np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"] / n_samples) / (depth - 1)))
+
             samples_idx = np.random.choice(len(possible_moves), n_samples, replace=False)
             possible_moves = [possible_moves[i] for i in samples_idx]
+
         if len(possible_moves) == 0:
             return None, float("-inf") if maximizing_player else float("inf")
 
@@ -182,7 +188,7 @@ class MinMaxAgent:
             for move in possible_moves:
                 board_copy = board.ai_copy()
                 self.make_move(board_copy, move, render=False)
-                _, value = self.minimax(board_copy, depth - 1, alpha, beta)
+                _, value = self.minimax(board_copy, depth - 1, alpha, beta, next_n_fanning)
                 if value > max_value or best_move is None:
                     max_value = value
                     best_move = move
@@ -197,7 +203,7 @@ class MinMaxAgent:
             for move in possible_moves:
                 board_copy = board.ai_copy()
                 self.make_move(board_copy, move, render=False)
-                _, value = self.minimax(board_copy, depth - 1, alpha, beta)
+                _, value = self.minimax(board_copy, depth - 1, alpha, beta, next_n_fanning)
                 if value < min_value or best_move is None:
                     min_value = value
                     best_move = move

@@ -45,6 +45,7 @@ class Board:
     winner: Literal["orange", "white"] | None = None
     sid: int = 0
     is_draw: bool = False
+    piece_mapping: dict[int, DraggablePiece] = None
 
     def __init__(
         self,
@@ -74,6 +75,10 @@ class Board:
                 )
             ],
         }
+        self.piece_mapping = {
+            piece.id: piece for player in self.pieces.values() for piece in player
+        }
+
         self.sid += 2
 
         self.available_pieces = {"orange": 8, "white": 8}
@@ -90,35 +95,23 @@ class Board:
         new_board.pieces = {
             player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces
         }
-        id_piece_map = {piece.id: piece for player in new_board.pieces.values() for piece in player}
-
+        
         new_board.available_pieces = {
-            player: self.available_pieces[player] for player in self.available_pieces
+            player: new_board.available_pieces[player] for player in self.available_pieces
         }
+        new_board.piece_mapping = {piece.id: piece for player in new_board.pieces.values() for piece in player}
+
         new_board.turn = self.turn
         new_board.phase = self.phase
         new_board.sid = self.sid
         new_board.winner = self.winner
         new_board.is_draw = self.is_draw
 
-        new_board.formed_mills = []
+        new_board.formed_mills = deepcopy(self.formed_mills)
+        new_board.current_mills = deepcopy(self.current_mills)
+        new_board.available_nodes = deepcopy(self.available_nodes)
 
-        for a, b, c in self.formed_mills:
-            with contextlib.suppress(KeyError):
-                a_corr = id_piece_map[a.id]
-                b_corr = id_piece_map[b.id]
-                c_corr = id_piece_map[c.id]
-                new_board.formed_mills.append([a_corr, b_corr, c_corr])
 
-        new_board.current_mills = []
-        for a, b, c in self.current_mills:
-            with contextlib.suppress(KeyError):
-                a_corr = id_piece_map[a.id]
-                b_corr = id_piece_map[b.id]
-                c_corr = id_piece_map[c.id]
-                new_board.current_mills.append([a_corr, b_corr, c_corr])
-
-        new_board.available_nodes = self.available_nodes.copy()
         return new_board
 
     def update_draggable_pieces(self):
@@ -139,6 +132,7 @@ class Board:
                         id=self.sid,
                     )
                 )
+                self.piece_mapping[self.sid] = self.pieces[player_pieces[0].piece.player][-1]
                 self.sid += 1
                 self.available_pieces[player_pieces[0].piece.player] -= 1
 
