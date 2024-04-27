@@ -79,7 +79,7 @@ def main():
                         alpha=float("-inf"),
                         beta=float("inf"),
                         fanning=max_n_samples[board.turn],
-                        multicore=True,
+                        multicore=TRAINING_PARAMETERS["N_PROCESS"]
                     )
                     move = agents[board.turn].make_move(board, best_move, render=TRAINING_PARAMETERS["RENDER"])  # type: ignore
                     if TRAINING_PARAMETERS["RENDER"]:

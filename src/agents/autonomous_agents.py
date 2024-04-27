@@ -181,8 +181,8 @@ class MinMaxAgent:
         alpha: float,
         beta: float,
         fanning: Optional[int] = None,
-        cumulative_n_samples=1,
-        multicore=False,
+        cumulative_n_samples: float = 1,
+        multicore: bool = False,
     ) -> tuple[Any, float]:
         """Method to perform the minimax algorithm.
 
@@ -225,7 +225,7 @@ class MinMaxAgent:
         extreme_value = float("-inf") if maximizing_player else float("inf")
         best_move = None
 
-        if not multicore:
+        if multicore <= 1:
             for move in possible_moves:
                 best_move, extreme_value, alpha, beta = self.check_single_move(
                     board=board,
@@ -242,7 +242,7 @@ class MinMaxAgent:
                 if beta <= alpha:
                     break
         else:
-            with Pool(cpu_count() - 2) as pool:
+            with Pool(cpu_count() if multicore == -1 else multicore) as pool:
                 results = [
                     pool.apply_async(
                         self.check_single_move,
@@ -292,20 +292,24 @@ class MinMaxAgent:
         cumulative_n_samples: int,
         best_move: Any,
     ) -> tuple[Any, float, float, float]:
-        board_copy = board.ai_copy()
-        self.make_move(board_copy, move, render=False)
-        _, value = self.minimax(
-            board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False
-        )
-        if (
-            (maximizing_player and value > extreme_value)
-            or (not maximizing_player and value < extreme_value)
-            or best_move is None
-        ):
-            extreme_value = value
-            best_move = move
-        if maximizing_player:
-            alpha = max(alpha, extreme_value)
-        else:
-            beta = min(beta, extreme_value)
-        return best_move, extreme_value, alpha, beta
+        
+        try: 
+            board_copy = board.ai_copy()
+            self.make_move(board_copy, move, render=False)
+            _, value = self.minimax(
+                board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False
+            )
+            if (
+                (maximizing_player and value > extreme_value)
+                or (not maximizing_player and value < extreme_value)
+                or best_move is None
+            ):
+                extreme_value = value
+                best_move = move
+            if maximizing_player:
+                alpha = max(alpha, extreme_value)
+            else:
+                beta = min(beta, extreme_value)
+            return best_move, extreme_value, alpha, beta
+        except KeyboardInterrupt:
+            return best_move, extreme_value, alpha, beta
