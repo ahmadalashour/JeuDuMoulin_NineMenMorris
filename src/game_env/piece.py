@@ -1,14 +1,23 @@
 from src.game_env.node import Node
-import pygame
 import numpy as np
 import dataclasses as dc
-from src.globals import INITIAL_POSITIONS, ICONS, NODES, EDGES, CELL_SIZE, MARGIN, Action, NODE_LOOKUP
-from pygame.locals import MOUSEBUTTONDOWN, MOUSEBUTTONUP
+from src.globals import (
+    INITIAL_POSITIONS,
+    ICONS,
+    NODES,
+    EDGES,
+    CELL_SIZE,
+    MARGIN,
+    Action,
+    NODE_LOOKUP,
+    TRAINING_PARAMETERS,
+)
 from typing import TYPE_CHECKING, Optional
 from copy import deepcopy
 
 if TYPE_CHECKING:
     from src.game_env.board import Board
+    import pygame
 
 
 @dc.dataclass
@@ -31,9 +40,8 @@ class Piece:
         if not self.node:
             self.node = Node(INITIAL_POSITIONS[self.player])
 
-    def surface(self, cell_size: int):
-        surface = pygame.image.load(str(ICONS[self.player]))
-        return pygame.transform.scale(surface, (cell_size, cell_size))
+    def surface(self):
+        return str(ICONS[self.player])
 
 
 @dc.dataclass
@@ -100,14 +108,21 @@ class DraggablePiece:
             [piece.mill_count > 0 for piece in board.pieces[self.piece.player] if not piece.first_move]
         )
 
-    def handle_remove_event(self, event: pygame.event.Event, board: "Board") -> bool:
+    def handle_remove_event(self, event: "pygame.event.Event", board: "Board") -> bool:
         """Handle the event of removing the piece from the board."""
+        from pygame.locals import MOUSEBUTTONDOWN
+        import pygame
+
         if not self.first_move:
             if event.type == MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 piece_x = self.piece.node.x * self.cell_size + self.margin  # type: ignore
                 piece_y = self.piece.node.y * self.cell_size  # type: ignore
-                piece_rect = self.piece.surface(self.cell_size).get_rect(topleft=(piece_x, piece_y))
+                surface_path = self.piece.surface()
+                surface = pygame.image.load(surface_path)
+
+                surface = pygame.transform.scale(surface, (self.cell_size, self.cell_size))
+                piece_rect = surface.get_rect(topleft=(piece_x, piece_y))
                 if piece_rect.collidepoint(mouse_x, mouse_y):
                     if self.removable(board):
 
@@ -122,8 +137,11 @@ class DraggablePiece:
 
         return False
 
-    def handle_event(self, event: pygame.event.Event, board: "Board") -> Action | None:
+    def handle_event(self, event: "pygame.event.Event", board: "Board") -> Action | None:
         """Handle the event of moving the piece on the board."""
+        from pygame.locals import MOUSEBUTTONDOWN, MOUSEBUTTONUP
+        import pygame
+
         if not self.interactable:
             return
         if (board.phase == "placing" and self.first_move) or board.phase == "moving":
@@ -137,7 +155,11 @@ class DraggablePiece:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 piece_x = self.piece.node.x * self.cell_size + self.margin  # type: ignore
                 piece_y = self.piece.node.y * self.cell_size  # type: ignore
-                piece_rect = self.piece.surface(self.cell_size).get_rect(topleft=(piece_x, piece_y))
+                surface_path = self.piece.surface()
+                surface = pygame.image.load(surface_path)
+                surface = pygame.transform.scale(surface, (self.cell_size, self.cell_size))
+
+                piece_rect = surface.get_rect(topleft=(piece_x, piece_y))
                 if piece_rect.collidepoint(mouse_x, mouse_y):
                     self.dragging = True
 
@@ -182,6 +204,8 @@ class DraggablePiece:
             return "undo"
 
     def update_position(self):
+        import pygame
+
         """Update the position of the piece on the board."""
         if self.dragging:
             mouse_x, mouse_y = pygame.mouse.get_pos()

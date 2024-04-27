@@ -1,11 +1,13 @@
 # This is a base class for the board of the game (Nine men's Moris ). It is a 2D array of cells.
-import pygame
 import time
 from src.game_env.piece import DraggablePiece, Piece  # type: ignore
-from typing import Literal
+from typing import Literal, Optional, TYPE_CHECKING
 from src.game_env.node import Node
-from src.globals import EDGES, NODES, Turn
+from src.globals import EDGES, NODES, Turn, ICONS
 from copy import deepcopy
+
+if TYPE_CHECKING:
+    import pygame
 
 
 class Board:
@@ -48,9 +50,9 @@ class Board:
 
     def __init__(
         self,
-        screen: pygame.Surface,
         cell_size: int,
         margin: int,
+        screen: Optional["pygame.Surface"] = None,
         interactables: list[Literal["orange", "white"]] | None = None,
     ):
         self.available_nodes = deepcopy(NODES)
@@ -88,7 +90,7 @@ class Board:
 
     def ai_copy(self):
         """Create a copy of the board for the AI to use."""
-        new_board = Board(screen=self.screen, cell_size=self.cell_size, margin=self.margin)
+        new_board = Board(cell_size=self.cell_size, margin=self.margin)
         new_board.pieces = {
             player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces
         }
@@ -129,7 +131,8 @@ class Board:
         for player_pieces in self.pieces.values():
             empty_slot = True
             for piece in player_pieces:
-                piece.update_position()
+                if self.screen:
+                    piece.update_position()
                 if piece.first_move:
                     empty_slot = False
             if empty_slot and self.available_pieces[player_pieces[0].piece.player] > 0:
@@ -158,10 +161,10 @@ class Board:
         """Draw the board on the screen.
 
         Args:
-            screen (pygame.Surface): The screen to draw the board on.
-            cell_size (int): The size of each cell.
-            margin (int): The margin around the board.
+
         """
+        import pygame
+
         self._start_timer("draw")
         # Load background image
         background = pygame.image.load("assets/background.jpg")
@@ -200,9 +203,12 @@ class Board:
         for player in self.pieces:
             for piece in self.pieces[player]:
                 if piece.piece.node is not None and not piece.dragging:
+                    surface_path = piece.piece.surface()
+                    surface = pygame.image.load(surface_path)
+                    surface = pygame.transform.scale(surface, (self.cell_size, self.cell_size))
                     # Make the icons a little smaller
                     smaller_icon = pygame.transform.scale(
-                        piece.piece.surface(self.cell_size),
+                        surface,
                         (int(self.cell_size * 0.8), int(self.cell_size * 0.8)),
                     )
                     self.screen.blit(
@@ -217,9 +223,13 @@ class Board:
         for player in self.pieces:
             for piece in self.pieces[player]:
                 if piece.piece.node is not None and piece.dragging:
+                    surface_path = piece.piece.surface()
+                    surface = pygame.image.load(surface_path)
+                    surface = pygame.transform.scale(surface, (self.cell_size, self.cell_size))
+
                     # Make the icons a little smaller
                     smaller_icon = pygame.transform.scale(
-                        piece.piece.surface(self.cell_size),
+                        surface,
                         (int(self.cell_size * 0.8), int(self.cell_size * 0.8)),
                     )
                     self.screen.blit(
@@ -330,7 +340,7 @@ class Board:
         return game_over_result
 
     @staticmethod
-    def _update_mill_count(board:"Board"):
+    def _update_mill_count(board: "Board"):
         for piece in board.piece_mapping.values():
             piece.mill_count = 0
         for mill in board.current_mills:

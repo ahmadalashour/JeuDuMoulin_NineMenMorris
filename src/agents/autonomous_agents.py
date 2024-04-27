@@ -5,6 +5,7 @@ import numpy as np
 import dataclasses as dc
 from copy import deepcopy
 from src.game_env.node import Node
+from multiprocessing import Pool, cpu_count
 
 
 @dc.dataclass
@@ -15,6 +16,7 @@ class MinMaxAgent:
         max_n_samples (int): The maximum number of samples to consider.
     """
 
+    max_n_samples: Optional[int] = None
     render_steps: int = 10
 
     @staticmethod
@@ -66,6 +68,15 @@ class MinMaxAgent:
         Returns:
             float: The evaluation of the board state.
         """
+
+        game_phase = "placing"
+        if board.phase == "moving":
+            game_phase = "moving"
+            if len(board.pieces[board.turn]) <= 3:
+                game_phase = "flying"
+
+        coefs = EVALUATION_COEFFICIENTS[game_phase]
+
         sparsity_eval = 0
         if TRAINING_PARAMETERS["USE_SPARSITY"]:
             for player in ["orange", "white"]:
@@ -77,7 +88,9 @@ class MinMaxAgent:
                         sparsity_eval += len(availables) if player == "orange" else -len(availables)
 
         sparsity_eval = sparsity_eval / 36.0  # in the range [-1, 1]
-        n_pieces_eval = (len(board.pieces["orange"]) - len(board.pieces["white"])) / 9.0  # in the range [-1, 1]
+        n_pieces_eval = (
+            len(board.pieces["orange"]) - len(board.pieces["white"])
+        ) / 9.0  # in the range [-1, 1]
         if len(board.pieces["orange"]) <= 2:
             return -np.inf
         if len(board.pieces["white"]) <= 2:
@@ -97,10 +110,10 @@ class MinMaxAgent:
             )  # in the range [-1, 1]
 
         return (
-            EVALUATION_COEFFICIENTS["sparsity"] * sparsity_eval
-            + EVALUATION_COEFFICIENTS["n_pieces"] * n_pieces_eval
-            + EVALUATION_COEFFICIENTS["n_mills"] * n_mills_eval
-            + EVALUATION_COEFFICIENTS["entropy"] * entropy
+            coefs["sparsity"] * sparsity_eval
+            + coefs["n_pieces"] * n_pieces_eval
+            + coefs["n_mills"] * n_mills_eval
+            + coefs["entropy"] * entropy
         )
 
     def make_move(
@@ -162,7 +175,14 @@ class MinMaxAgent:
         return False
 
     def minimax(
-        self, board: Board, depth: int, alpha: float, beta: float, fanning: Optional[int] = None
+        self,
+        board: Board,
+        depth: int,
+        alpha: float,
+        beta: float,
+        fanning: Optional[int] = None,
+        cumulative_n_samples=1,
+        multicore=False,
     ) -> tuple[Any, float]:
         """Method to perform the minimax algorithm.
 
@@ -176,7 +196,7 @@ class MinMaxAgent:
         Returns:
             tuple[int | None, float]: The best move and its value.
         """
-        
+
         board.update_draggable_pieces()
         if depth == 0 or board.game_over:
             return None, self.evaluate(board)
@@ -184,19 +204,17 @@ class MinMaxAgent:
         maximizing_player = board.turn == "orange"
 
         possible_moves = self.generate_possible_moves(board)
-        # next_n_fanning = None
+        next_n_fanning = None
         if fanning and fanning > 0:
             fanning *= depth
             n_samples = min(
                 len(possible_moves),
                 fanning,
             )
-            # cumulative_n_samples *= n_samples
+            cumulative_n_samples *= n_samples
 
-            # if depth > 1 and n_samples > 0:
-            #     next_n_fanning = int(
-            #         np.exp(np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"] / cumulative_n_samples) / (depth - 1))
-            #     )
+            if depth > 1 and n_samples > 0:
+                next_n_fanning = int(np.exp(np.log(self.max_n_samples / cumulative_n_samples) / (depth - 1)))
 
             samples_idx = np.random.choice(len(possible_moves), n_samples, replace=False)
             possible_moves = [possible_moves[i] for i in samples_idx]
@@ -204,32 +222,90 @@ class MinMaxAgent:
         if len(possible_moves) == 0:
             return None, float("-inf") if maximizing_player else float("inf")
 
-        if maximizing_player:
-            max_value = float("-inf")
-            best_move = None
-            for move in possible_moves:
-                board_copy = board.ai_copy()
-                self.make_move(board_copy, move, render=False)
-                _, value = self.minimax(board_copy, depth - 1, alpha, beta,fanning)
-                if value > max_value or best_move is None:
-                    max_value = value
-                    best_move = move
-                alpha = max(alpha, max_value)
-                if beta <= alpha:
-                    break
-            return best_move, max_value
-        else:
-            min_value = float("inf")
-            best_move = None
+        extreme_value = float("-inf") if maximizing_player else float("inf")
+        best_move = None
 
+        if not multicore:
             for move in possible_moves:
-                board_copy = board.ai_copy()
-                self.make_move(board_copy, move, render=False)
-                _, value = self.minimax(board_copy, depth - 1, alpha, beta, fanning)
-                if value < min_value or best_move is None:
-                    min_value = value
-                    best_move = move
-                beta = min(beta, min_value)
+                best_move, extreme_value, alpha, beta = self.check_single_move(
+                    board=board,
+                    move=move,
+                    depth=depth,
+                    extreme_value=extreme_value,
+                    alpha=alpha,
+                    beta=beta,
+                    maximizing_player=maximizing_player,
+                    next_n_fanning=next_n_fanning,
+                    cumulative_n_samples=cumulative_n_samples,
+                    best_move=best_move,
+                )
                 if beta <= alpha:
                     break
-            return best_move, min_value
+        else:
+            with Pool(cpu_count() - 2) as pool:
+                results = [
+                    pool.apply_async(
+                        self.check_single_move,
+                        (
+                            board.ai_copy(),
+                            move,
+                            depth,
+                            extreme_value,
+                            alpha,
+                            beta,
+                            maximizing_player,
+                            next_n_fanning,
+                            cumulative_n_samples,
+                            best_move,
+                        ),
+                    )
+                    for move in possible_moves
+                ]
+                for result in results:
+                    move, value, alpha, beta = result.get()
+                    if (
+                        (maximizing_player and value > extreme_value)
+                        or (not maximizing_player and value < extreme_value)
+                        or best_move is None
+                    ):
+                        extreme_value = value
+                        best_move = move
+                    if maximizing_player:
+                        alpha = max(alpha, extreme_value)
+                    else:
+                        beta = min(beta, extreme_value)
+                    if beta <= alpha:
+                        break
+
+        return best_move, extreme_value
+
+    def check_single_move(
+        self,
+        board: Board,
+        move: tuple[int | None, "Node", int],
+        depth: int,
+        extreme_value: float,
+        alpha: float,
+        beta: float,
+        maximizing_player: bool,
+        next_n_fanning: Optional[int],
+        cumulative_n_samples: int,
+        best_move: Any,
+    ) -> tuple[Any, float, float, float]:
+        board_copy = board.ai_copy()
+        self.make_move(board_copy, move, render=False)
+        _, value = self.minimax(
+            board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False
+        )
+        if (
+            (maximizing_player and value > extreme_value)
+            or (not maximizing_player and value < extreme_value)
+            or best_move is None
+        ):
+            extreme_value = value
+            best_move = move
+        if maximizing_player:
+            alpha = max(alpha, extreme_value)
+        else:
+            beta = min(beta, extreme_value)
+        return best_move, extreme_value, alpha, beta

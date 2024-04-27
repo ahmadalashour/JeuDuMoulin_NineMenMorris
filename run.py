@@ -1,4 +1,3 @@
-import pygame
 from src.game_env.board import Board
 from src.globals import CELL_SIZE, MARGIN, MIN_DRAW_MOVES
 
@@ -10,8 +9,17 @@ import numpy as np
 
 def main():
     """Main function to run the game."""
+
     if TRAINING_PARAMETERS["RENDER"]:
+        import pygame
+
         screen = pygame.display.set_mode((7 * CELL_SIZE + MARGIN * 5, 7 * CELL_SIZE + MARGIN))
+        move_sound = pygame.mixer.Sound("assets/move_sound.mp3")
+        background_music = pygame.mixer.Sound("assets/background_music.mp3")
+        background_music.set_volume(0.6)
+        background_music.play(-1)
+    else:
+        screen = None
     board = Board(interactables=TRAINING_PARAMETERS["INTERACTABLES"], screen=screen, margin=MARGIN, cell_size=CELL_SIZE)  # type: ignore
 
     max_n_samples = {"orange": None, "white": None}
@@ -23,12 +31,8 @@ def main():
             )
             for turn in ["orange", "white"]
         }
-    move_sound = pygame.mixer.Sound("assets/move_sound.mp3")
-    background_music = pygame.mixer.Sound("assets/background_music.mp3")
-    background_music.set_volume(0.6)
-    background_music.play(-1)
 
-    agents = {color: (MinMaxAgent() if color not in board.interactables else HumanAgent()) for color in board.available_pieces.keys()}  # type: ignore
+    agents = {color: (MinMaxAgent(max_n_samples=TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) if color not in board.interactables else HumanAgent()) for color in board.available_pieces.keys()}  # type: ignore
 
     board.latest_phase = board.phase
 
@@ -75,9 +79,11 @@ def main():
                         alpha=float("-inf"),
                         beta=float("inf"),
                         fanning=max_n_samples[board.turn],
+                        multicore=True,
                     )
                     move = agents[board.turn].make_move(board, best_move, render=TRAINING_PARAMETERS["RENDER"])  # type: ignore
-                    move_sound.play()
+                    if TRAINING_PARAMETERS["RENDER"]:
+                        move_sound.play()
                     if can_add:
                         if move is not None:
                             latest_moves.append(move)

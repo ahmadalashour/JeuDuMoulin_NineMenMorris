@@ -1,6 +1,5 @@
-import pygame
 import sys
-from pygame.locals import QUIT, MOUSEBUTTONDOWN, MOUSEMOTION
+
 from src.globals import TRAINING_PARAMETERS
 from run import main
 
@@ -11,31 +10,6 @@ LIGHT_GRAY = (220, 220, 220)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 SOFT_BLUE = (173, 216, 230)  # Soft blue color for buttons
-
-# Initialize Pygame
-pygame.init()
-
-# Load sounds
-main_menu_soundtrack = pygame.mixer.Sound("assets/main_menu_soundtrack.mp3")
-main_menu_soundtrack.set_volume(0.6)
-click_sound = pygame.mixer.Sound("assets/GUI_click.mp3")
-hover_sound = pygame.mixer.Sound("assets/GUI_hover.mp3")
-
-# Set up the window
-window_width = 800
-window_height = 800
-window_surface = pygame.display.set_mode((window_width, window_height))
-pygame.display.set_caption("Jeu Du Moulin")
-
-# Load background image
-background_image = pygame.image.load("assets/menubackground.jpg")
-background_image = pygame.transform.scale(background_image, (window_width, window_height))
-
-# Fonts
-font = pygame.font.SysFont(None, 36)  # type: ignore
-
-# Play main menu soundtrack
-main_menu_soundtrack.play(-1)
 
 
 # Function to display text on the screen
@@ -190,5 +164,34 @@ def main_menu():
 
 
 if __name__ == "__main__":
+
+    import pygame
+    from pygame.locals import QUIT, MOUSEBUTTONDOWN, MOUSEMOTION
+
+    # Initialize Pygame
+    pygame.init()
+
+    # Load sounds
+    main_menu_soundtrack = pygame.mixer.Sound("assets/main_menu_soundtrack.mp3")
+    main_menu_soundtrack.set_volume(0.6)
+    click_sound = pygame.mixer.Sound("assets/GUI_click.mp3")
+    hover_sound = pygame.mixer.Sound("assets/GUI_hover.mp3")
+
+    # Set up the window
+    window_width = 800
+    window_height = 800
+    window_surface = pygame.display.set_mode((window_width, window_height))
+    pygame.display.set_caption("Jeu Du Moulin")
+
+    # Load background image
+    background_image = pygame.image.load("assets/menubackground.jpg")
+    background_image = pygame.transform.scale(background_image, (window_width, window_height))
+
+    # Fonts
+    font = pygame.font.SysFont(None, 36)  # type: ignore
+
+    # Play main menu soundtrack
+    main_menu_soundtrack.play(-1)
+
     # Start main menu
     main_menu()
