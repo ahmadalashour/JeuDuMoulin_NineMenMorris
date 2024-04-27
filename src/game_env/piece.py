@@ -195,8 +195,7 @@ class DraggablePiece:
             if self.id in [x, y, z]:
                 board.current_mills.remove(mill)
                 for piece_id in [x, y, z]:
-                    if piece_id in board.piece_mapping.keys():
-                        board.piece_mapping[piece_id].mill_count -= 1
+                    board.piece_mapping[piece_id].mill_count -= 1
 
     def check_legal_move(self, board: "Board", new_node: Node, just_check: bool = False) -> Action:
         """Check if the move to the given node is legal.

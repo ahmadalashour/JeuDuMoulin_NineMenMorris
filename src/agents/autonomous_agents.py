@@ -78,8 +78,8 @@ class MinMaxAgent:
 
         sparsity_eval = sparsity_eval / 36.0 # in the range [-1, 1]
         n_pieces_eval = len(board.pieces["orange"]) - len(board.pieces["white"])  / 9.0 # in the range [-1, 1]
-        white_mills = [mill for mill in board.current_mills if mill[0][0] in board.piece_mapping.keys() and board.piece_mapping[mill[0][0]].piece.player == "white"]
-        orange_mills = [mill for mill in board.current_mills if mill[0][0] in board.piece_mapping.keys() and board.piece_mapping[mill[0][0]].piece.player == "orange"]
+        white_mills = [mill for mill in board.current_mills if board.piece_mapping[mill[0][0]].piece.player == "white"]
+        orange_mills = [mill for mill in board.current_mills if board.piece_mapping[mill[0][0]].piece.player == "orange"]
         n_mills_eval = len(orange_mills) - len(white_mills) / 4.0 # in the range [-1, 1]
 
         entropy = 0 

@@ -100,7 +100,7 @@ class Board:
             player: new_board.available_pieces[player] for player in self.available_pieces
         }
         new_board.piece_mapping = {piece.id: piece for player in new_board.pieces.values() for piece in player}
-
+        ids = list(new_board.piece_mapping.keys())
         new_board.turn = self.turn
         new_board.phase = self.phase
         new_board.sid = self.sid
@@ -109,6 +109,18 @@ class Board:
 
         new_board.formed_mills = deepcopy(self.formed_mills)
         new_board.current_mills = deepcopy(self.current_mills)
+
+        # remove mills that have ids that are not in the new board
+        new_board.formed_mills = [mill for mill in new_board.formed_mills if all(pid in ids for pid in mill[0])]
+        new_board.current_mills = [mill for mill in new_board.current_mills if all(pid in ids for pid in mill[0])]
+
+        for piece in new_board.piece_mapping.values():
+            piece.mill_count = 0
+
+        for mill in new_board.formed_mills:
+            for pid in mill[0]:
+                new_board.piece_mapping[pid].mill_count += 1
+
         new_board.available_nodes = deepcopy(self.available_nodes)
 
 
