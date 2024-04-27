@@ -101,7 +101,7 @@ TRAINING_PARAMETERS = dict(
 EVALUATION_COEFFICIENTS = {
     "sparsity": 0.0,
     "n_pieces": 1.0,
-    "n_mills": 0.8,
+    "n_mills": 0.5,
     "entropy": 0.0,
 }
 

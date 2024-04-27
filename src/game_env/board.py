@@ -5,7 +5,6 @@ from src.game_env.piece import DraggablePiece, Piece  # type: ignore
 from typing import Literal
 from src.game_env.node import Node
 from src.globals import EDGES, NODES, Turn
-import contextlib
 from copy import deepcopy
 
 
@@ -75,9 +74,7 @@ class Board:
                 )
             ],
         }
-        self.piece_mapping = {
-            piece.id: piece for player in self.pieces.values() for piece in player
-        }
+        self.piece_mapping = {piece.id: piece for player in self.pieces.values() for piece in player}
 
         self.sid += 2
 
@@ -95,11 +92,13 @@ class Board:
         new_board.pieces = {
             player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces
         }
-        
+
         new_board.available_pieces = {
             player: new_board.available_pieces[player] for player in self.available_pieces
         }
-        new_board.piece_mapping = {piece.id: piece for player in new_board.pieces.values() for piece in player}
+        new_board.piece_mapping = {
+            piece.id: piece for player in new_board.pieces.values() for piece in player
+        }
         ids = list(new_board.piece_mapping.keys())
         new_board.turn = self.turn
         new_board.phase = self.phase
@@ -111,18 +110,15 @@ class Board:
         new_board.current_mills = deepcopy(self.current_mills)
 
         # remove mills that have ids that are not in the new board
-        new_board.formed_mills = [mill for mill in new_board.formed_mills if all(pid in ids for pid in mill[0])]
-        new_board.current_mills = [mill for mill in new_board.current_mills if all(pid in ids for pid in mill[0])]
+        new_board.formed_mills = [
+            mill for mill in new_board.formed_mills if all(pid in ids for pid in mill[0])
+        ]
+        new_board.current_mills = [
+            mill for mill in new_board.current_mills if all(pid in ids for pid in mill[0])
+        ]
 
-        for piece in new_board.piece_mapping.values():
-            piece.mill_count = 0
-
-        for mill in new_board.formed_mills:
-            for pid in mill[0]:
-                new_board.piece_mapping[pid].mill_count += 1
-
+        self._update_mill_count(new_board)
         new_board.available_nodes = deepcopy(self.available_nodes)
-
 
         return new_board
 
@@ -153,6 +149,9 @@ class Board:
 
         if moving_phase and self.phase == "placing":
             self.phase = "moving"
+
+        self._update_mill_count(self)
+
         self._end_timer("update_draggable_pieces")
 
     def draw(self):
@@ -329,3 +328,11 @@ class Board:
             self.winner = "orange" if len(self.pieces["white"]) < 3 else "white"
 
         return game_over_result
+
+    @staticmethod
+    def _update_mill_count(board:"Board"):
+        for piece in board.piece_mapping.values():
+            piece.mill_count = 0
+        for mill in board.current_mills:
+            for pid in mill[0]:
+                board.piece_mapping[pid].mill_count += 1

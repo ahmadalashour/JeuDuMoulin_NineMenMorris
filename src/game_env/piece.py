@@ -117,8 +117,9 @@ class DraggablePiece:
                                 board.formed_mills.remove(mill)
                                 board.current_mills.remove(mill)
 
-                        self.update_mills(board)
+                        self.remove_mill_containing_piece(board)
                         return True
+
         return False
 
     def handle_event(self, event: pygame.event.Event, board: "Board") -> Action | None:
@@ -188,14 +189,12 @@ class DraggablePiece:
                 f"{chr(np.clip(round((mouse_x - self.margin -  self.cell_size // 2) /  self.cell_size), 0, 6) + 97)}{6 - np.clip(round((mouse_y -  self.cell_size // 2) /  self.cell_size), 0, 6)}"
             )
 
-    def update_mills(self, board: "Board") -> None:
+    def remove_mill_containing_piece(self, board: "Board") -> None:
         """Update the mills formed by the piece on the board."""
         for mill in board.current_mills:
             x, y, z = mill[0]
             if self.id in [x, y, z]:
                 board.current_mills.remove(mill)
-                for piece_id in [x, y, z]:
-                    board.piece_mapping[piece_id].mill_count -= 1
 
     def check_legal_move(self, board: "Board", new_node: Node, just_check: bool = False) -> Action:
         """Check if the move to the given node is legal.
@@ -217,7 +216,8 @@ class DraggablePiece:
 
         if not just_check:
             # in this case we need to update the board formed mills
-            self.update_mills(board)
+            self.remove_mill_containing_piece(board)
+
         node_occupied = False
         for player_pieces in board.pieces.values():
             for piece in player_pieces:
@@ -261,7 +261,10 @@ class DraggablePiece:
                                     if piece.piece.node == third_node
                                 ][0]
 
-                                new_mill = [[self.id, second_piece.id, third_piece.id], [deepcopy(new_node), deepcopy(second_node), deepcopy(third_node)]]
+                                new_mill = [
+                                    [self.id, second_piece.id, third_piece.id],
+                                    [deepcopy(new_node), deepcopy(second_node), deepcopy(third_node)],
+                                ]
 
                                 # Sort the mill
                                 new_mill[0].sort()
@@ -269,8 +272,9 @@ class DraggablePiece:
 
                                 if new_mill not in new_mills:
                                     if (
-                                        new_mill not in board.formed_mills
-                                        # or len(board.pieces[board.turn]) == 3 
+                                        new_mill
+                                        not in board.formed_mills
+                                        # or len(board.pieces[board.turn]) == 3
                                     ):
                                         new_mills.append(new_mill)
                                         if not just_check:
@@ -278,9 +282,7 @@ class DraggablePiece:
 
                                     if not just_check:
                                         board.current_mills.append(new_mill)
-                                        for piece_id in new_mill[0]:
-                                            board.piece_mapping[piece_id].mill_count += 1
-
+                                        ids_formed = [tuple(mill[0]) for mill in new_mills]
             if new_mills:
                 return "remove"
 

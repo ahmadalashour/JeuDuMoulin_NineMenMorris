@@ -13,7 +13,7 @@ def main():
     if TRAINING_PARAMETERS["RENDER"]:
         screen = pygame.display.set_mode((7 * CELL_SIZE + MARGIN * 5, 7 * CELL_SIZE + MARGIN))
     board = Board(interactables=TRAINING_PARAMETERS["INTERACTABLES"], screen=screen, margin=MARGIN, cell_size=CELL_SIZE)  # type: ignore
-    
+
     max_n_samples = {"orange": None, "white": None}
     if TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
         max_n_samples = {
@@ -74,7 +74,7 @@ def main():
                         depth=TRAINING_PARAMETERS["DIFFICULTY"][board.turn],  # type: ignore
                         alpha=float("-inf"),
                         beta=float("inf"),
-                        fanning = max_n_samples[board.turn], 
+                        fanning=max_n_samples[board.turn],
                     )
                     move = agents[board.turn].make_move(board, best_move, render=TRAINING_PARAMETERS["RENDER"])  # type: ignore
                     move_sound.play()
