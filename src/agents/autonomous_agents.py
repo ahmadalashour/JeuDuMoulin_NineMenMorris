@@ -6,6 +6,7 @@ import dataclasses as dc
 from copy import deepcopy
 from src.game_env.node import Node
 from multiprocessing import Pool, cpu_count
+import signal
 
 
 @dc.dataclass
@@ -68,7 +69,7 @@ class MinMaxAgent:
         Returns:
             float: The evaluation of the board state.
         """
-
+        
         game_phase = "placing"
         if board.phase == "moving":
             game_phase = "moving"
@@ -173,6 +174,9 @@ class MinMaxAgent:
             return True
 
         return False
+    
+    def init_worker():
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     def minimax(
         self,
@@ -225,7 +229,7 @@ class MinMaxAgent:
         extreme_value = float("-inf") if maximizing_player else float("inf")
         best_move = None
 
-        if multicore <= 1:
+        if multicore <= 1 and multicore!=-1:
             for move in possible_moves:
                 best_move, extreme_value, alpha, beta = self.check_single_move(
                     board=board,
@@ -243,9 +247,8 @@ class MinMaxAgent:
                     break
         else:
             with Pool(cpu_count() if multicore == -1 else multicore) as pool:
-                results = [
-                    pool.apply_async(
-                        self.check_single_move,
+                processes =  [pool.apply_async(
+                    self.check_single_move,
                         (
                             board.ai_copy(),
                             move,
@@ -258,25 +261,29 @@ class MinMaxAgent:
                             cumulative_n_samples,
                             best_move,
                         ),
-                    )
-                    for move in possible_moves
-                ]
-                for result in results:
-                    move, value, alpha, beta = result.get()
-                    if (
-                        (maximizing_player and value > extreme_value)
-                        or (not maximizing_player and value < extreme_value)
-                        or best_move is None
-                    ):
-                        extreme_value = value
-                        best_move = move
-                    if maximizing_player:
-                        alpha = max(alpha, extreme_value)
-                    else:
-                        beta = min(beta, extreme_value)
-                    if beta <= alpha:
-                        break
-
+                )
+                for move in possible_moves]
+                try: 
+                    for process in processes:
+                        result = process.get()
+                        move, value, alpha, beta = result
+                        if (
+                            (maximizing_player and value > extreme_value)
+                            or (not maximizing_player and value < extreme_value)
+                            or best_move is None
+                        ):
+                            extreme_value = value
+                            best_move = move
+                        if maximizing_player:
+                            alpha = max(alpha, extreme_value)
+                        else:
+                            beta = min(beta, extreme_value)
+                        if beta <= alpha:
+                            break
+                except KeyboardInterrupt:
+                    print("Keyboard interrupt received. Stopping processes...")
+                    pool.terminate()
+                    pool.join()
         return best_move, extreme_value
 
     def check_single_move(
@@ -293,23 +300,23 @@ class MinMaxAgent:
         best_move: Any,
     ) -> tuple[Any, float, float, float]:
         
-        try: 
-            board_copy = board.ai_copy()
-            self.make_move(board_copy, move, render=False)
-            _, value = self.minimax(
-                board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False
-            )
-            if (
-                (maximizing_player and value > extreme_value)
-                or (not maximizing_player and value < extreme_value)
-                or best_move is None
-            ):
-                extreme_value = value
-                best_move = move
-            if maximizing_player:
-                alpha = max(alpha, extreme_value)
-            else:
-                beta = min(beta, extreme_value)
-            return best_move, extreme_value, alpha, beta
-        except KeyboardInterrupt:
-            return best_move, extreme_value, alpha, beta
+        board_copy = board.ai_copy()
+        self.make_move(board_copy, move, render=False)
+        _, value = self.minimax(
+            board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False
+        )
+
+        if (
+            (maximizing_player and value > extreme_value)
+            or (not maximizing_player and value < extreme_value)
+            or best_move is None
+        ):
+            extreme_value = value
+            best_move = move
+
+        if maximizing_player:
+            alpha = max(alpha, extreme_value)
+        else:
+            beta = min(beta, extreme_value)
+
+        return best_move, extreme_value, alpha, beta

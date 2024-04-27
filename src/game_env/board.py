@@ -95,9 +95,7 @@ class Board:
             player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces
         }
 
-        new_board.available_pieces = {
-            player: new_board.available_pieces[player] for player in self.available_pieces
-        }
+        new_board.available_pieces = deepcopy(self.available_pieces)
         new_board.piece_mapping = {
             piece.id: piece for player in new_board.pieces.values() for piece in player
         }
