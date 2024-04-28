@@ -100,7 +100,7 @@ def main():
             board.is_draw = True
 
 
-def process_bot(board: Board, agents: dict, max_n_samples: dict, latest_moves: list, can_add: bool):
+def process_bot(board: Board, agents: dict["str", MinMaxAgent | HumanAgent], max_n_samples: dict, latest_moves: list, can_add: bool):
     best_move, _ = agents[board.turn].minimax(  # type: ignore
         board,
         depth=TRAINING_PARAMETERS["DIFFICULTY"][board.turn],  # type: ignore

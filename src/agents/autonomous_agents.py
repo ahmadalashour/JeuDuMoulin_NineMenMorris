@@ -7,6 +7,7 @@ from copy import deepcopy
 from src.game_env.node import Node
 from multiprocessing import Pool, cpu_count
 import signal
+import time
 
 
 @dc.dataclass
@@ -18,7 +19,7 @@ class MinMaxAgent:
     """
 
     max_n_samples: Optional[int] = None
-    render_steps: int = 10
+    render_steps: int = 30
 
     @staticmethod
     def generate_possible_moves(board: Board) -> list[tuple[int | None, "Node", int]]:
@@ -155,8 +156,7 @@ class MinMaxAgent:
                         start_node.y + vector[1] / self.render_steps * (i + 1),
                     )
                     moved_piece.piece.node = current_node
-                    board.draw()
-
+                    time.sleep(0.02)
             moved_piece.piece.node = backup_start_node
             move_result = moved_piece.move(move_node, board)
 

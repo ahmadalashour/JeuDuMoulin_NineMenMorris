@@ -48,6 +48,7 @@ class Board:
     is_draw: bool = False
     piece_mapping: dict[int, DraggablePiece] = None
     started_moving: bool = False
+    time: float = time.time()
 
     def __init__(
         self,
@@ -84,6 +85,15 @@ class Board:
         self.available_pieces = {"orange": 8, "white": 8}
         self.timers = {}
 
+    @property
+    def time_display_string(self):
+        """Return the time taken to make a move as a string."""
+        time_diff = time.time() - self.time
+        hours = int(time_diff// 3600)
+        minutes = int((time_diff % 3600) // 60)
+        seconds = int(time_diff % 60)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}" if hours > 0 else f"{minutes:02d}:{seconds:02d}"
+    
     @property
     def game_over(self):
         """Check if the game is over."""
@@ -255,10 +265,20 @@ class Board:
                 text, (i * self.cell_size + self.cell_size // 2 + self.margin - 10, 7 * self.cell_size)
             )
 
-        # Display score and turn with smaller font and appropriate colors
-        score_text = f"Orange: {len(self.pieces['orange'])}  White: {len(self.pieces['white'])}"
-        score_display = pygame.font.Font(None, 36).render(score_text, True, (255, 255, 255))
-        self.screen.blit(score_display, (self.screen.get_width() - score_display.get_width() - 10, 10))
+
+        
+        # Display the time taken to make a move
+        time_text = f"Time: {self.time_display_string}"
+        score_display = pygame.font.Font(None, 36).render(time_text, True, (255, 255, 255))
+        score_rect = pygame.Rect(0, 0, score_display.get_width(), score_display.get_height()) 
+        # Scale the score_rect by 1.5
+        score_rect.topleft = (self.screen.get_width() - score_display.get_width() - 50, 10)
+
+        # Draw black box with rounded edges
+        pygame.draw.rect(self.screen, (0, 0, 0), score_rect, border_radius=10)
+
+        # Draw the score display on the black box
+        self.screen.blit(score_display, score_rect.topleft)
 
         turn_text = f"Turn: {self.turn.capitalize()}"
         player_color = (255, 255, 255) if self.turn == "white" else (255, 165, 0)
@@ -266,20 +286,26 @@ class Board:
         self.screen.blit(
             turn_display,
             (
-                self.screen.get_width() - turn_display.get_width() - 10,
-                self.screen.get_height() - 40,
+                self.screen.get_width() - turn_display.get_width() - 50,
+                self.screen.get_height() - 80,
             ),
         )
 
         # Display phase with smaller font and appropriate colors
-        phase_text = f"Phase: {self.phase.capitalize()}"
-        phase_color = (255, 255, 255) if self.phase == "capturing" else (0, 255, 0)
+        phase_text = f"{self.phase.capitalize()}"
+        match self.phase:
+            case "placing":
+                phase_color = (255,254,222)
+            case "moving":
+                phase_color = (100, 100, 255)
+            case "capturing":
+                phase_color = (255, 0, 0)
         phase_display = pygame.font.Font(None, 36).render(phase_text, True, phase_color)
         self.screen.blit(
             phase_display,
             (
-                self.screen.get_width() - phase_display.get_width() - 10,
-                self.screen.get_height() // 2 - phase_display.get_height() // 2,
+                self.screen.get_width() - phase_display.get_width() - 80,
+                ((self.screen.get_height()-self.margin) // 2) - phase_display.get_height() // 2,
             ),
         )
 
@@ -302,13 +328,13 @@ class Board:
         # Display "Thinking" next to non-interactable pieces during their turn
         for player in self.pieces:
             if player not in self.interactables and self.turn == player:  # type: ignore
-                thinking_text = pygame.font.Font(None, 24).render("Thinking", True, (255, 255, 255))
+                thinking_text = pygame.font.Font(None, 24).render("Thinking" + "." * int(time.time() % 3), True, (255, 255, 255))
                 # display text to right of the self.screen, up if white, down if orange
                 self.screen.blit(
                     thinking_text,
                     (
-                        self.screen.get_width() - thinking_text.get_width() - 10,
-                        self.screen.get_height() - 2 * self.margin if player == "orange" else 2 * self.margin,
+                        self.screen.get_width() - thinking_text.get_width() -80 ,
+                        self.screen.get_height() - 3 * self.margin if player == "orange" else 2* self.margin,
                     ),
                 )
         # Update the display
@@ -345,4 +371,8 @@ class Board:
             piece.mill_count = 0
         for mill in board.current_mills:
             for pid in mill[0]:
-                board.piece_mapping[pid].mill_count += 1
+                if pid in board.piece_mapping:
+                    board.piece_mapping[pid].mill_count += 1
+                else:
+                    board.current_mills.remove(mill)
+                    break
