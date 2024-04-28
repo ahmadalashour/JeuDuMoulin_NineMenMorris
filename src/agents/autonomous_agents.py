@@ -187,6 +187,7 @@ class MinMaxAgent:
         fanning: Optional[int] = None,
         cumulative_n_samples: float = 1,
         multicore: bool = False,
+        first_call: bool = True,
     ) -> tuple[Any, float]:
         """Method to perform the minimax algorithm.
 
@@ -210,11 +211,16 @@ class MinMaxAgent:
         possible_moves = self.generate_possible_moves(board)
         next_n_fanning = None
         if fanning and fanning > 0:
-            fanning *= depth
+            fanning = int (depth * fanning)
+    
+            if first_call:
+                fanning = len(possible_moves)
+
             n_samples = min(
                 len(possible_moves),
                 fanning,
             )
+
             cumulative_n_samples *= n_samples
 
             if depth > 1 and n_samples > 0:
@@ -307,7 +313,7 @@ class MinMaxAgent:
         try:
             self.make_move(board_copy, move, render=False)
             _, value = self.minimax(
-                board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False
+                board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False, first_call=False
             )
         except KeyboardInterrupt:
             print("Keyboard interrupt received. Stopping processes...")
