@@ -5,10 +5,16 @@ from src.globals import TRAINING_PARAMETERS
 from src.agents.autonomous_agents import MinMaxAgent
 from src.agents.human_agent import HumanAgent
 import numpy as np
+from threading import Thread
+
+ai_thinking = False
+play_sound = False
 
 
 def main():
     """Main function to run the game."""
+
+    global ai_thinking, play_sound
 
     if TRAINING_PARAMETERS["RENDER"]:
         import pygame
@@ -60,7 +66,7 @@ def main():
                         if isinstance(agents[board.turn], HumanAgent):
                             move = agents[board.turn].move(event, board)  # type: ignore
                             if move is not None:
-                                move_sound.play()
+                                play_sound = True
                             if can_add:
 
                                 if move is not None:
@@ -73,20 +79,15 @@ def main():
         if board.turn not in board.interactables:  # type: ignore
             if not board.game_over:
                 if isinstance(agents[board.turn], MinMaxAgent):
-                    best_move, _ = agents[board.turn].minimax(  # type: ignore
-                        board,
-                        depth=TRAINING_PARAMETERS["DIFFICULTY"][board.turn],  # type: ignore
-                        alpha=float("-inf"),
-                        beta=float("inf"),
-                        fanning=max_n_samples[board.turn],
-                        multicore=TRAINING_PARAMETERS["N_PROCESS"],
-                    )
-                    move = agents[board.turn].make_move(board, best_move, render=TRAINING_PARAMETERS["RENDER"])  # type: ignore
-                    if TRAINING_PARAMETERS["RENDER"]:
-                        move_sound.play()
-                    if can_add:
-                        if move is not None:
-                            latest_moves.append(move)
+                    if not ai_thinking:
+                        ai_thinking = True
+                        Thread(
+                            target=process_bot, args=(board, agents, max_n_samples, latest_moves, can_add)
+                        ).start()
+
+        if TRAINING_PARAMETERS["RENDER"] and play_sound:
+            move_sound.play()
+            play_sound = False
 
         if not can_add and board.phase == "moving":
             can_add = True
@@ -97,6 +98,27 @@ def main():
             and board.phase == "moving"
         ):
             board.is_draw = True
+
+
+def process_bot(board: Board, agents: dict, max_n_samples: dict, latest_moves: list, can_add: bool):
+    best_move, _ = agents[board.turn].minimax(  # type: ignore
+        board,
+        depth=TRAINING_PARAMETERS["DIFFICULTY"][board.turn],  # type: ignore
+        alpha=float("-inf"),
+        beta=float("inf"),
+        fanning=max_n_samples[board.turn],
+        multicore=TRAINING_PARAMETERS["N_PROCESS"],
+    )
+    move = agents[board.turn].make_move(board, best_move, render=TRAINING_PARAMETERS["RENDER"])  # type: ignore
+
+    if can_add:
+        if move is not None:
+            latest_moves.append(move)
+
+    global ai_thinking
+    ai_thinking = False
+    global play_sound
+    play_sound = True
 
 
 if __name__ == "__main__":

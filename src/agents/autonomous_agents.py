@@ -71,7 +71,7 @@ class MinMaxAgent:
         """
 
         game_phase = "placing"
-        if board.phase == "moving":
+        if board.started_moving:
             game_phase = "moving"
             if len(board.pieces[board.turn]) <= 3:
                 game_phase = "flying"
@@ -286,6 +286,7 @@ class MinMaxAgent:
                     print("Keyboard interrupt received. Stopping processes...")
                     pool.terminate()
                     pool.join()
+                    raise KeyboardInterrupt
         return best_move, extreme_value
 
     def check_single_move(
@@ -303,10 +304,14 @@ class MinMaxAgent:
     ) -> tuple[Any, float, float, float]:
 
         board_copy = board.ai_copy()
-        self.make_move(board_copy, move, render=False)
-        _, value = self.minimax(
-            board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False
-        )
+        try:
+            self.make_move(board_copy, move, render=False)
+            _, value = self.minimax(
+                board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False
+            )
+        except KeyboardInterrupt:
+            print("Keyboard interrupt received. Stopping processes...")
+            return best_move, extreme_value, alpha, beta
 
         if (
             (maximizing_player and value > extreme_value)

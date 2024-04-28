@@ -47,6 +47,7 @@ class Board:
     sid: int = 0
     is_draw: bool = False
     piece_mapping: dict[int, DraggablePiece] = None
+    started_moving: bool = False
 
     def __init__(
         self,
@@ -105,6 +106,7 @@ class Board:
         new_board.sid = self.sid
         new_board.winner = self.winner
         new_board.is_draw = self.is_draw
+        new_board.started_moving = self.started_moving
 
         new_board.formed_mills = deepcopy(self.formed_mills)
         new_board.current_mills = deepcopy(self.current_mills)
@@ -125,7 +127,7 @@ class Board:
     def update_draggable_pieces(self):
         """Update the position of the draggable pieces on the board."""
         self._start_timer("update_draggable_pieces")
-        moving_phase = True
+        self.started_moving = True
         for player_pieces in self.pieces.values():
             empty_slot = True
             for piece in player_pieces:
@@ -146,9 +148,9 @@ class Board:
                 self.available_pieces[player_pieces[0].piece.player] -= 1
 
             if any(piece.first_move for piece in player_pieces):
-                moving_phase = False
+                self.started_moving = False
 
-        if moving_phase and self.phase == "placing":
+        if self.started_moving and self.phase == "placing":
             self.phase = "moving"
 
         self._update_mill_count(self)

@@ -96,14 +96,14 @@ TRAINING_PARAMETERS = dict(
     STUPIDITY=0.0,
     USE_SPARSITY=False,
     MAX_N_OPERATIONS=None,
-    N_PROCESS=1,
+    N_PROCESS=-1,
 )
 
 EVALUATION_COEFFICIENTS = {
     "placing": {
-        "sparsity": 0.0,
-        "n_pieces": 1.0,
-        "n_mills": 0.5,
+        "sparsity": 0.1,
+        "n_pieces": 0.2,
+        "n_mills": 1.0,
         "entropy": 0.0,
     },
     "moving": {
@@ -115,7 +115,7 @@ EVALUATION_COEFFICIENTS = {
     "flying": {
         "sparsity": 0.0,
         "n_pieces": 1.0,
-        "n_mills": 0.5,
+        "n_mills": 1.0,
         "entropy": 0.0,
     },
 }
