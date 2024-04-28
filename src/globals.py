@@ -93,10 +93,10 @@ TRAINING_PARAMETERS = dict(
         "orange": 5,
         "white": 5,
     },
-    STUPIDITY=0.0,
+    STUPIDITY=1.0,
     USE_SPARSITY=False,
     MAX_N_OPERATIONS=None,
-    N_PROCESS=0,
+    N_PROCESS=-1,
 )
 
 EVALUATION_COEFFICIENTS = {
@@ -104,19 +104,19 @@ EVALUATION_COEFFICIENTS = {
         "sparsity": 0.1,
         "n_pieces": 0.2,
         "n_mills": 1.0,
-        "entropy": 0.1,
+        "entropy": 0.0,
     },
     "moving": {
         "sparsity": 0.0,
         "n_pieces": 1.0,
-        "n_mills": 0.5,
-        "entropy": 0.5,
+        "n_mills": 0.6,
+        "entropy": 0.3,
     },
     "flying": {
         "sparsity": 0.0,
         "n_pieces": 1.0,
         "n_mills": 1.0,
-        "entropy": 0.0,
+        "entropy": 0.1,
     },
 }
 

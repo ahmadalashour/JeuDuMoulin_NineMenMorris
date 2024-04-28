@@ -10,7 +10,6 @@ from src.globals import (
     MARGIN,
     Action,
     NODE_LOOKUP,
-    TRAINING_PARAMETERS,
 )
 from typing import TYPE_CHECKING, Optional
 from copy import deepcopy
@@ -66,6 +65,7 @@ class DraggablePiece:
     id: int
     interactable: bool = True
     first_move: bool = True
+    available_moves: list[Node] = dc.field(default_factory=list)
 
     dragging: bool = False
     starting_node: Optional[Node] = None
@@ -308,7 +308,7 @@ class DraggablePiece:
                                     if new_mill not in board.current_mills:
                                         if not just_check:
                                             board.current_mills.append(new_mill)
-            if new_mills:
+            if len(new_mills) > 0:
                 return "remove"
 
         return "move"

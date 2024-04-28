@@ -61,7 +61,10 @@ class MinMaxAgent:
         return generated_moves
 
     @staticmethod
-    def evaluate(board: Board) -> float:  # Reward function
+    def evaluate(board: Board,
+                 evaluation_coefficients: dict[str, float] = EVALUATION_COEFFICIENTS,
+                 training_parameters: dict[str, Any] = TRAINING_PARAMETERS,
+                 node_lookup: dict["Node", list["Node"]] = NODE_LOOKUP) -> float:
         """Method to evaluate the board state.
 
         Args:
@@ -77,15 +80,15 @@ class MinMaxAgent:
             if len(board.pieces[board.turn]) <= 3:
                 game_phase = "flying"
 
-        coefs = EVALUATION_COEFFICIENTS[game_phase]
+        coefs = evaluation_coefficients[game_phase]
 
         sparsity_eval = 0
-        if TRAINING_PARAMETERS["USE_SPARSITY"]:
+        if training_parameters["USE_SPARSITY"]:
             for player in ["orange", "white"]:
                 for piece in board.pieces[player]:
                     if len(board.pieces[player]) > 3:
                         availables = [
-                            node for node in NODE_LOOKUP[piece.piece.node] if node in board.available_nodes
+                            node for node in node_lookup[piece.piece.node] if node in board.available_nodes
                         ]
                         sparsity_eval += len(availables) if player == "orange" else -len(availables)
 
@@ -103,14 +106,13 @@ class MinMaxAgent:
         orange_mills = [
             mill for mill in board.current_mills if board.piece_mapping[mill[0][0]].piece.player == "orange"
         ]
-        n_mills_eval = len(orange_mills) - len(white_mills) / 4.0  # in the range [-1, 1]
+        n_mills_eval = (len(orange_mills) - len(white_mills)) / 4.0  # in the range [-1, 1]
 
         entropy = 0
-        if TRAINING_PARAMETERS["STUPIDITY"] > 0:
+        if training_parameters["STUPIDITY"] > 0:
             entropy = (
-                np.random.normal(0, TRAINING_PARAMETERS["STUPIDITY"]) / TRAINING_PARAMETERS["STUPIDITY"]
+                np.random.normal(0, training_parameters["STUPIDITY"]) / training_parameters["STUPIDITY"]
             )  # in the range [-1, 1]
-
         return (
             coefs["sparsity"] * sparsity_eval
             + coefs["n_pieces"] * n_pieces_eval
@@ -188,6 +190,9 @@ class MinMaxAgent:
         cumulative_n_samples: float = 1,
         multicore: bool = False,
         first_call: bool = True,
+        evaluation_coefficients: dict[str, float] = EVALUATION_COEFFICIENTS,
+        training_parameters: dict[str, Any] = TRAINING_PARAMETERS,
+        node_lookup: dict["Node", list["Node"]] = NODE_LOOKUP,
     ) -> tuple[Any, float]:
         """Method to perform the minimax algorithm.
 
@@ -204,7 +209,7 @@ class MinMaxAgent:
 
         board.update_draggable_pieces()
         if depth == 0 or board.game_over:
-            return None, self.evaluate(board)
+            return None, self.evaluate(board, evaluation_coefficients, training_parameters, node_lookup)
 
         maximizing_player = board.turn == "orange"
 
@@ -248,6 +253,9 @@ class MinMaxAgent:
                     next_n_fanning=next_n_fanning,
                     cumulative_n_samples=cumulative_n_samples,
                     best_move=best_move,
+                    evaluation_coefficients=evaluation_coefficients,
+                    training_parameters=training_parameters,
+                    node_lookup=node_lookup,
                 )
                 if beta <= alpha:
                     break
@@ -267,6 +275,9 @@ class MinMaxAgent:
                             next_n_fanning,
                             cumulative_n_samples,
                             best_move,
+                            evaluation_coefficients,
+                            training_parameters,
+                            node_lookup,
                         ),
                     )
                     for move in possible_moves
@@ -307,13 +318,17 @@ class MinMaxAgent:
         next_n_fanning: Optional[int],
         cumulative_n_samples: int,
         best_move: Any,
+        evaluation_coefficients: dict[str, float],
+        training_parameters: dict[str, Any],
+        node_lookup: dict["Node", list["Node"]],
+
     ) -> tuple[Any, float, float, float]:
 
         board_copy = board.ai_copy()
         try:
             self.make_move(board_copy, move, render=False)
             _, value = self.minimax(
-                board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False, first_call=False
+                board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False, first_call=False, evaluation_coefficients=evaluation_coefficients, training_parameters=training_parameters, node_lookup=node_lookup
             )
         except KeyboardInterrupt:
             print("Keyboard interrupt received. Stopping processes...")
