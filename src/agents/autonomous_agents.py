@@ -96,10 +96,12 @@ class MinMaxAgent:
         n_pieces_eval = (
             len(board.pieces["orange"]) - len(board.pieces["white"])
         ) / 9.0  # in the range [-1, 1]
-        if len(board.pieces["orange"]) <= 2:
-            return -np.inf
-        if len(board.pieces["white"]) <= 2:
-            return np.inf
+
+        if board.started_moving:
+            if len(board.pieces["orange"]) <= 2:
+                return -np.inf
+            if len(board.pieces["white"]) <= 2:
+                return np.inf
         white_mills = [
             mill for mill in board.current_mills if board.piece_mapping[mill[0][0]].piece.player == "white"
         ]
@@ -113,6 +115,7 @@ class MinMaxAgent:
             entropy = (
                 np.random.normal(0, training_parameters["STUPIDITY"]) / training_parameters["STUPIDITY"]
             )  # in the range [-1, 1]
+
         return (
             coefs["sparsity"] * sparsity_eval
             + coefs["n_pieces"] * n_pieces_eval
@@ -240,7 +243,7 @@ class MinMaxAgent:
         extreme_value = float("-inf") if maximizing_player else float("inf")
         best_move = None
 
-        if multicore <= 1 and multicore != -1:
+        if multicore == 1 or depth == 1 or len(possible_moves)/cpu_count() < 0.5:
             for move in possible_moves:
                 best_move, extreme_value, alpha, beta = self.check_single_move(
                     board=board,
