@@ -104,7 +104,7 @@ EVALUATION_COEFFICIENTS = {
         "sparsity": 0.1,
         "n_pieces": 0.2,
         "n_mills": 1.0,
-        "entropy": 0.0,
+        "entropy": 0.1,
     },
     "moving": {
         "sparsity": 0.0,
