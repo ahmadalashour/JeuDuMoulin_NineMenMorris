@@ -129,11 +129,13 @@ class DraggablePiece:
                         for mill in board.current_mills:
                             x, y, z = mill[0]
                             if self.id in [x, y, z]:
-                                board.formed_mills.remove(mill)
                                 board.current_mills.remove(mill)
 
                         self.remove_mill_containing_piece(board)
                         return True
+                    
+                    else: 
+                        breakpoint()
 
         return False
 
@@ -303,10 +305,9 @@ class DraggablePiece:
                                         new_mills.append(new_mill)
                                         if not just_check:
                                             board.formed_mills.append(new_mill)
-
-                                    if not just_check:
-                                        board.current_mills.append(new_mill)
-                                        ids_formed = [tuple(mill[0]) for mill in new_mills]
+                                    if new_mill not in board.current_mills:
+                                        if not just_check:
+                                            board.current_mills.append(new_mill)
             if new_mills:
                 return "remove"
 
