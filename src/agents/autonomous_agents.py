@@ -179,7 +179,7 @@ class MinMaxAgent:
             return True
 
         return False
-
+    @staticmethod
     def init_worker():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -191,7 +191,7 @@ class MinMaxAgent:
         beta: float,
         fanning: Optional[int] = None,
         cumulative_n_samples: float = 1,
-        multicore: bool = False,
+        multicore: int = 1,
         first_call: bool = True,
         evaluation_coefficients: dict[str, float] = EVALUATION_COEFFICIENTS,
         training_parameters: dict[str, Any] = TRAINING_PARAMETERS,
@@ -242,7 +242,6 @@ class MinMaxAgent:
 
         extreme_value = float("-inf") if maximizing_player else float("inf")
         best_move = None
-
         if multicore == 1 or depth == 1 or len(possible_moves)/cpu_count() < 0.5:
             for move in possible_moves:
                 best_move, extreme_value, alpha, beta = self.check_single_move(
@@ -263,7 +262,7 @@ class MinMaxAgent:
                 if beta <= alpha:
                     break
         else:
-            with Pool(cpu_count() if multicore == -1 else multicore) as pool:
+            with Pool(cpu_count() -2 if multicore == -1 else multicore, initializer=self.init_worker) as pool:
                 processes = [
                     pool.apply_async(
                         self.check_single_move,
@@ -331,7 +330,7 @@ class MinMaxAgent:
         try:
             self.make_move(board_copy, move, render=False)
             _, value = self.minimax(
-                board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=False, first_call=False, evaluation_coefficients=evaluation_coefficients, training_parameters=training_parameters, node_lookup=node_lookup
+                board_copy, depth - 1, alpha, beta, next_n_fanning, cumulative_n_samples, multicore=1, first_call=False, evaluation_coefficients=evaluation_coefficients, training_parameters=training_parameters, node_lookup=node_lookup
             )
         except KeyboardInterrupt:
             print("Keyboard interrupt received. Stopping processes...")
