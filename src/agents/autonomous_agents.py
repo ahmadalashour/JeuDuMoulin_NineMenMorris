@@ -125,7 +125,7 @@ class MinMaxAgent:
                             else -len(availables)
                         )
 
-        sparsity_eval = sparsity_eval / 36.0  # in the range [-1, 1]
+        sparsity_eval = sparsity_eval / 24.0  # in the range [-1, 1]
         n_pieces_eval = (
             len(board.pieces[Player.orange]) - len(board.pieces[Player.white])
         ) / 9.0  # in the range [-1, 1]
