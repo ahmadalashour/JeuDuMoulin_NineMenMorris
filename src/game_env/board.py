@@ -111,12 +111,12 @@ class Board:
             piece.id: piece for player in new_board.pieces.values() for piece in player
         }
         ids = list(new_board.piece_mapping.keys())
-        new_board.turn = self.turn
-        new_board.phase = self.phase
-        new_board.sid = self.sid
-        new_board.winner = self.winner
-        new_board.is_draw = self.is_draw
-        new_board.started_moving = self.started_moving
+        new_board.turn = deepcopy(self.turn)
+        new_board.phase = deepcopy(self.phase)
+        new_board.sid = deepcopy(self.sid)
+        new_board.winner = deepcopy(self.winner)
+        new_board.is_draw = deepcopy(self.is_draw)  
+        new_board.started_moving = deepcopy(self.started_moving)
 
         new_board.formed_mills = deepcopy(self.formed_mills)
         new_board.current_mills = deepcopy(self.current_mills)

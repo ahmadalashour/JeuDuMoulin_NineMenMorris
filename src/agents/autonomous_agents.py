@@ -102,6 +102,7 @@ class MinMaxAgent:
                 return -np.inf
             if len(board.pieces["white"]) <= 2:
                 return np.inf
+            
         white_mills = [
             mill for mill in board.current_mills if board.piece_mapping[mill[0][0]].piece.player == "white"
         ]
@@ -262,7 +263,7 @@ class MinMaxAgent:
                 if beta <= alpha:
                     break
         else:
-            with Pool(cpu_count() -2 if multicore == -1 else multicore, initializer=self.init_worker) as pool:
+            with Pool(cpu_count() if multicore == -1 else multicore, initializer=self.init_worker) as pool:
                 processes = [
                     pool.apply_async(
                         self.check_single_move,

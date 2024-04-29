@@ -73,7 +73,8 @@ def main():
                 can_add = False
 
                 while True:  # Main game loop
-                    board.update_draggable_pieces()
+                    if not ai_thinking:
+                        board.update_draggable_pieces()
                     if TRAINING_PARAMETERS["RENDER"]:
                         board.draw()
 
@@ -109,8 +110,9 @@ def main():
                             if isinstance(agents[board.turn], MinMaxAgent):
                                 if not ai_thinking:
                                     ai_thinking = True
+                                    print("Starting Thread for ", board.turn)
                                     Thread(
-                                        target=process_bot, args=(board, agents, max_n_samples, latest_moves, can_add, dummy_agent, difficulty_1 if board.turn == "orange" else difficulty_2)
+                                        target=process_bot, args=(board.ai_copy(), agents, max_n_samples, latest_moves, can_add, dummy_agent, difficulty_1 if board.turn == "orange" else difficulty_2)
                                     ).start()
 
                     if TRAINING_PARAMETERS["RENDER"] and play_sound:
