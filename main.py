@@ -157,7 +157,7 @@ def main_menu():
                     if event.type == MOUSEBUTTONDOWN:
                         click_sound.play()
                         TRAINING_PARAMETERS["STUPIDITY"] = round(
-                            min(TRAINING_PARAMETERS["STUPIDITY"] + 0.1, 2.0),
+                            min(TRAINING_PARAMETERS["STUPIDITY"] + 0.1, 2.0), # type: ignore
                             2,  # type: ignore
                         )  # type: ignore
 

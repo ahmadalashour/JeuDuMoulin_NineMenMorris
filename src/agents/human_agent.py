@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 class HumanAgent:
     """Class to represent a human agent."""
 
-    _remove_piece = False
+    _remove_piece = False 
 
     def move(self, event: "pygame.event.Event", board: "Board"):
         """Method to handle the human agent's move.
