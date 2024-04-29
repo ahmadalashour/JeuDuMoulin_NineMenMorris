@@ -112,7 +112,7 @@ def main():
                                     ai_thinking = True
                                     print("Starting Thread for ", board.turn)
                                     Thread(
-                                        target=process_bot, args=(board.ai_copy(), agents, max_n_samples, latest_moves, can_add, dummy_agent, difficulty_1 if board.turn == "orange" else difficulty_2)
+                                        target=process_bot, args=(board, agents, max_n_samples, latest_moves, can_add, dummy_agent, difficulty_1 if board.turn == "orange" else difficulty_2)
                                     ).start()
 
                     if TRAINING_PARAMETERS["RENDER"] and play_sound:
@@ -121,7 +121,6 @@ def main():
 
                     if not can_add and board.phase == "moving":
                         can_add = True
-
                     if (
                         len(latest_moves) > MIN_DRAW_MOVES
                         and not any(latest_moves[-MIN_DRAW_MOVES:])
