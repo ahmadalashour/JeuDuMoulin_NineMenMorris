@@ -10,6 +10,8 @@ from src.globals import (
     MARGIN,
     Action,
     NODE_LOOKUP,
+    Phase,
+    Player,
 )
 from typing import TYPE_CHECKING, Optional
 from copy import deepcopy
@@ -32,7 +34,7 @@ class Piece:
         node (Node): The node the piece is on.
     """
 
-    player: str
+    player: Player
     node: Node
 
     def __post_init__(self):
@@ -90,7 +92,8 @@ class DraggablePiece:
             or (nodes[0] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[0]])
         )
         return edge_check and (
-            nodes[0].x == nodes[1].x == nodes[2].x or nodes[0].y == nodes[1].y == nodes[2].y
+            nodes[0].x == nodes[1].x == nodes[2].x
+            or nodes[0].y == nodes[1].y == nodes[2].y
         )
 
     def copy_ai(self):
@@ -105,7 +108,11 @@ class DraggablePiece:
     def removable(self, board: "Board") -> bool:
         """Check if the piece can be removed from the board."""
         return self.mill_count == 0 or all(
-            [piece.mill_count > 0 for piece in board.pieces[self.piece.player] if not piece.first_move]
+            [
+                piece.mill_count > 0
+                for piece in board.pieces[self.piece.player]
+                if not piece.first_move
+            ]
         )
 
     def handle_remove_event(self, event: "pygame.event.Event", board: "Board") -> bool:
@@ -121,11 +128,14 @@ class DraggablePiece:
                 surface_path = self.piece.surface()
                 surface = pygame.image.load(surface_path)
 
-                surface = pygame.transform.scale(surface, (self.cell_size, self.cell_size))
+                surface = pygame.transform.scale(
+                    surface, (self.cell_size, self.cell_size)
+                )
                 piece_rect = surface.get_rect(topleft=(piece_x, piece_y))
+                if board.current_mills is None:
+                    return False
                 if piece_rect.collidepoint(mouse_x, mouse_y):
                     if self.removable(board):
-
                         for mill in board.current_mills:
                             x, y, z = mill[0]
                             if self.id in [x, y, z]:
@@ -133,20 +143,22 @@ class DraggablePiece:
 
                         self.remove_mill_containing_piece(board)
                         return True
-                    
-                    else: 
-                        breakpoint()
 
         return False
 
-    def handle_event(self, event: "pygame.event.Event", board: "Board") -> Action | None:
+    def handle_event(
+        self, event: "pygame.event.Event", board: "Board"
+    ) -> Action | None:
         """Handle the event of moving the piece on the board."""
         from pygame.locals import MOUSEBUTTONDOWN, MOUSEBUTTONUP
         import pygame
 
         if not self.interactable:
             return
-        if (board.phase == "placing" and self.first_move) or board.phase == "moving":
+
+        if (
+            board.phase == Phase.placing and self.first_move
+        ) or board.phase == Phase.moving:
             if not self.dragging:
                 self.starting_node = self.piece.node
 
@@ -159,7 +171,9 @@ class DraggablePiece:
                 piece_y = self.piece.node.y * self.cell_size  # type: ignore
                 surface_path = self.piece.surface()
                 surface = pygame.image.load(surface_path)
-                surface = pygame.transform.scale(surface, (self.cell_size, self.cell_size))
+                surface = pygame.transform.scale(
+                    surface, (self.cell_size, self.cell_size)
+                )
 
                 piece_rect = surface.get_rect(topleft=(piece_x, piece_y))
                 if piece_rect.collidepoint(mouse_x, mouse_y):
@@ -169,12 +183,18 @@ class DraggablePiece:
                 self.dragging = False
                 # Snap the piece to the nearest grid cell if dropped outside
                 x_index = np.clip(
-                    round((pygame.mouse.get_pos()[0] - self.margin - self.cell_size // 2) / self.cell_size),
+                    round(
+                        (pygame.mouse.get_pos()[0] - self.margin - self.cell_size // 2)
+                        / self.cell_size
+                    ),
                     0,
                     6,
                 )
                 y_index = np.clip(
-                    round((pygame.mouse.get_pos()[1] - self.cell_size // 2) / self.cell_size),
+                    round(
+                        (pygame.mouse.get_pos()[1] - self.cell_size // 2)
+                        / self.cell_size
+                    ),
                     0,
                     6,
                 )
@@ -192,18 +212,19 @@ class DraggablePiece:
             Action: The action taken.
         """
         legality = self.check_legal_move(board, new_node)
-        if new_node in NODES and legality in ["move", "remove"]:
-
+        if new_node in NODES and legality in [Action.move, Action.remove]:
             self.piece.node = new_node
             if self.first_move:
                 self.first_move = False
+            if board.available_nodes is None:
+                return Action.undo
             board.available_nodes.remove(new_node)
             if self.starting_node in NODES:
                 board.available_nodes.append(self.starting_node)
             return legality
         else:
             self.piece.node = self.starting_node  # type: ignore
-            return "undo"
+            return Action.undo
 
     def update_position(self):
         import pygame
@@ -215,14 +236,18 @@ class DraggablePiece:
                 f"{chr(np.clip(round((mouse_x - self.margin -  self.cell_size // 2) /  self.cell_size), 0, 6) + 97)}{6 - np.clip(round((mouse_y -  self.cell_size // 2) /  self.cell_size), 0, 6)}"
             )
 
-    def remove_mill_containing_piece(self, board: "Board") -> None:
+    def remove_mill_containing_piece(self, board: "Board"):
         """Update the mills formed by the piece on the board."""
+        if board.current_mills is None:
+            return
         for mill in board.current_mills:
             x, y, z = mill[0]
             if self.id in [x, y, z]:
                 board.current_mills.remove(mill)
 
-    def check_legal_move(self, board: "Board", new_node: Node, just_check: bool = False) -> Action:
+    def check_legal_move(
+        self, board: "Board", new_node: Node, just_check: bool = False
+    ) -> Action:
         """Check if the move to the given node is legal.
 
         Args:
@@ -238,7 +263,7 @@ class DraggablePiece:
             self.starting_node = self.piece.node
 
         if new_node == self.starting_node:
-            return "undo"
+            return Action.undo
 
         if not just_check:
             # in this case we need to update the board formed mills
@@ -252,9 +277,11 @@ class DraggablePiece:
                         node_occupied = True
 
         if node_occupied:
-            return "undo"
+            return Action.undo
         else:
-            player_controlled_nodes = [piece.piece.node for piece in board.pieces[self.piece.player]]
+            player_controlled_nodes = [
+                piece.piece.node for piece in board.pieces[self.piece.player]
+            ]
 
             # Check if edge is legal
             if (
@@ -263,11 +290,14 @@ class DraggablePiece:
                 and (self.starting_node, new_node) not in EDGES
                 and (new_node, self.starting_node) not in EDGES
             ):
-                return "undo"
+                return Action.undo
 
             new_mills = []
             for second_node in NODE_LOOKUP[new_node]:
-                if second_node in player_controlled_nodes and second_node != self.starting_node:
+                if (
+                    second_node in player_controlled_nodes
+                    and second_node != self.starting_node
+                ):
                     for third_node in NODE_LOOKUP[second_node] + NODE_LOOKUP[new_node]:
                         if (
                             third_node in player_controlled_nodes
@@ -287,31 +317,37 @@ class DraggablePiece:
                                     if piece.piece.node == third_node
                                 ][0]
 
-                                new_mill = [
+                                new_mill: list[list[int | Node]] = [
                                     [self.id, second_piece.id, third_piece.id],
-                                    [deepcopy(new_node), deepcopy(second_node), deepcopy(third_node)],
+                                    [
+                                        deepcopy(new_node),
+                                        deepcopy(second_node),
+                                        deepcopy(third_node),
+                                    ],
                                 ]
 
                                 # Sort the mill
                                 new_mill[0].sort()
                                 new_mill[1].sort()
 
+                                if board.current_mills is None:
+                                    return Action.undo
+
                                 if new_mill not in new_mills:
                                     if (
-                                        new_mill
-                                        not in board.formed_mills
-                                        # or len(board.pieces[board.turn]) == 3
+                                        new_mill not in board.formed_mills  # type: ignore
+                                        # or len(board.pieces[board.turn]) == 3 # Un comment to allow mills to be reformed with same 3 pieces
                                     ):
                                         new_mills.append(new_mill)
                                         if not just_check:
-                                            board.formed_mills.append(new_mill)
+                                            board.formed_mills.append(new_mill)  # type: ignore
                                     if new_mill not in board.current_mills:
                                         if not just_check:
                                             board.current_mills.append(new_mill)
             if len(new_mills) > 0:
-                return "remove"
+                return Action.remove
 
-        return "move"
+        return Action.move
 
     def __lt__(self, other):
         return self.id < other.id

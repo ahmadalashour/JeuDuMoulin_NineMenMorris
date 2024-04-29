@@ -1,9 +1,9 @@
 # This is a base class for the board of the game (Nine men's Moris ). It is a 2D array of cells.
 import time
-from src.game_env.piece import DraggablePiece, Piece  # type: ignore
-from typing import Literal, Optional, TYPE_CHECKING
+from src.game_env.piece import DraggablePiece, Piece
+from typing import Optional, TYPE_CHECKING
 from src.game_env.node import Node
-from src.globals import EDGES, NODES, Turn, ICONS
+from src.globals import EDGES, NODES, Phase, Player
 from copy import deepcopy
 
 if TYPE_CHECKING:
@@ -36,17 +36,17 @@ class Board:
         is_draw (bool): Whether the game is a draw.
     """
 
-    formed_mills = []
-    current_mills = []
-    turn: Turn = "orange"
-    phase: Literal["placing", "moving", "capturing"] = "placing"
-    latest_phase: Literal["placing", "moving", "capturing"] = "placing"
-    interactables: list[Literal["orange", "white"]] | None = None
-    available_nodes: list["Node"] = None
-    winner: Literal["orange", "white"] | None = None
+    formed_mills: Optional[list[list[list[int | Node]]]] = None
+    current_mills: Optional[list[list[list[int | Node]]]] = None
+    turn: Player = Player.orange
+    phase: Phase = Phase.placing
+    latest_phase: Phase = Phase.placing
+    interactables: list[Player] | None = None
+    available_nodes: Optional[list["Node"]] = None
+    winner: Player | None = None
     sid: int = 0
     is_draw: bool = False
-    piece_mapping: dict[int, DraggablePiece] = None
+    piece_mapping: Optional[dict[int, DraggablePiece]] = None
     started_moving: bool = False
     time: float = time.time()
 
@@ -55,55 +55,64 @@ class Board:
         cell_size: int,
         margin: int,
         screen: Optional["pygame.Surface"] = None,
-        interactables: list[Literal["orange", "white"]] | None = None,
+        interactables: Optional[list[Player]] = None,
     ):
+        self.formed_mills = self.formed_mills or []
+        self.current_mills = self.current_mills or []
         self.available_nodes = deepcopy(NODES)
         self.screen = screen
         self.cell_size = cell_size
         self.margin = margin
         self.interactables = interactables or []
         self.pieces = {
-            "orange": [
+            Player.orange: [
                 DraggablePiece(
-                    Piece("orange", None),  # type: ignore
-                    interactable="orange" in self.interactables,
+                    Piece(Player.orange, None),  # type: ignore
+                    interactable=Player.orange in self.interactables,
                     id=self.sid,
                 )
             ],
-            "white": [
+            Player.white: [
                 DraggablePiece(
-                    Piece("white", None),  # type: ignore
-                    interactable="white" in self.interactables,
+                    Piece(Player.white, None),  # type: ignore
+                    interactable=Player.white in self.interactables,
                     id=self.sid + 1,
                 )
             ],
         }
-        self.piece_mapping = {piece.id: piece for player in self.pieces.values() for piece in player}
+        self.piece_mapping = {
+            piece.id: piece for player in self.pieces.values() for piece in player
+        }
 
         self.sid += 2
 
-        self.available_pieces = {"orange": 8, "white": 8}
+        self.available_pieces = {Player.orange: 8, Player.white: 8}
         self.timers = {}
 
     @property
-    def time_display_string(self):
+    def time_display_string(self) -> str:
         """Return the time taken to make a move as a string."""
         time_diff = time.time() - self.time
-        hours = int(time_diff// 3600)
+        hours = int(time_diff // 3600)
         minutes = int((time_diff % 3600) // 60)
         seconds = int(time_diff % 60)
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}" if hours > 0 else f"{minutes:02d}:{seconds:02d}"
-    
+        return (
+            f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            if hours > 0
+            else f"{minutes:02d}:{seconds:02d}"
+        )
+
     @property
-    def game_over(self):
+    def game_over(self) -> bool:
         """Check if the game is over."""
         return self.winner is not None or self._check_game_over() or self.is_draw
 
-    def ai_copy(self):
+    def ai_copy(self) -> "Board":
         """Create a copy of the board for the AI to use."""
         new_board = Board(cell_size=self.cell_size, margin=self.margin)
         new_board.pieces = {
-            player: [piece.copy_ai() for piece in self.pieces[player]] for player in self.pieces
+            player: [piece.copy_ai() for piece in self.pieces[player]]
+            for player in self.pieces
         }
 
         new_board.available_pieces = deepcopy(self.available_pieces)
@@ -115,18 +124,24 @@ class Board:
         new_board.phase = deepcopy(self.phase)
         new_board.sid = deepcopy(self.sid)
         new_board.winner = deepcopy(self.winner)
-        new_board.is_draw = deepcopy(self.is_draw)  
+        new_board.is_draw = deepcopy(self.is_draw)
         new_board.started_moving = deepcopy(self.started_moving)
 
         new_board.formed_mills = deepcopy(self.formed_mills)
         new_board.current_mills = deepcopy(self.current_mills)
 
+        if new_board.formed_mills is None or new_board.current_mills is None:
+            return new_board
         # remove mills that have ids that are not in the new board
         new_board.formed_mills = [
-            mill for mill in new_board.formed_mills if all(pid in ids for pid in mill[0])
+            mill
+            for mill in new_board.formed_mills
+            if all(pid in ids for pid in mill[0])
         ]
         new_board.current_mills = [
-            mill for mill in new_board.current_mills if all(pid in ids for pid in mill[0])
+            mill
+            for mill in new_board.current_mills
+            if all(pid in ids for pid in mill[0])
         ]
 
         self._update_mill_count(new_board)
@@ -153,15 +168,18 @@ class Board:
                         id=self.sid,
                     )
                 )
-                self.piece_mapping[self.sid] = self.pieces[player_pieces[0].piece.player][-1]
+                if self.piece_mapping:
+                    self.piece_mapping[self.sid] = self.pieces[
+                        player_pieces[0].piece.player
+                    ][-1]
                 self.sid += 1
                 self.available_pieces[player_pieces[0].piece.player] -= 1
 
             if any(piece.first_move for piece in player_pieces):
                 self.started_moving = False
 
-        if self.started_moving and self.phase == "placing":
-            self.phase = "moving"
+        if self.started_moving and self.phase == Phase.placing:
+            self.phase = Phase.moving
 
         self._update_mill_count(self)
 
@@ -175,10 +193,14 @@ class Board:
         """
         import pygame
 
+        if self.screen is None:
+            return
         self._start_timer("draw")
         # Load background image
         background = pygame.image.load("assets/background.jpg")
-        background = pygame.transform.scale(background, (self.screen.get_width(), self.screen.get_height()))
+        background = pygame.transform.scale(
+            background, (self.screen.get_width(), self.screen.get_height())
+        )
         self.screen.blit(background, (0, 0))
 
         # Draw edges, legal nodes, numbers, and letters
@@ -215,7 +237,9 @@ class Board:
                 if piece.piece.node is not None and not piece.dragging:
                     surface_path = piece.piece.surface()
                     surface = pygame.image.load(surface_path)
-                    surface = pygame.transform.scale(surface, (self.cell_size, self.cell_size))
+                    surface = pygame.transform.scale(
+                        surface, (self.cell_size, self.cell_size)
+                    )
                     # Make the icons a little smaller
                     smaller_icon = pygame.transform.scale(
                         surface,
@@ -224,7 +248,9 @@ class Board:
                     self.screen.blit(
                         smaller_icon,
                         (
-                            piece.piece.node.x * self.cell_size + self.margin + self.cell_size * 0.1,
+                            piece.piece.node.x * self.cell_size
+                            + self.margin
+                            + self.cell_size * 0.1,
                             piece.piece.node.y * self.cell_size + self.cell_size * 0.1,
                         ),
                     )
@@ -235,7 +261,9 @@ class Board:
                 if piece.piece.node is not None and piece.dragging:
                     surface_path = piece.piece.surface()
                     surface = pygame.image.load(surface_path)
-                    surface = pygame.transform.scale(surface, (self.cell_size, self.cell_size))
+                    surface = pygame.transform.scale(
+                        surface, (self.cell_size, self.cell_size)
+                    )
 
                     # Make the icons a little smaller
                     smaller_icon = pygame.transform.scale(
@@ -245,7 +273,9 @@ class Board:
                     self.screen.blit(
                         smaller_icon,
                         (
-                            piece.piece.node.x * self.cell_size + self.margin + self.cell_size * 0.1,
+                            piece.piece.node.x * self.cell_size
+                            + self.margin
+                            + self.cell_size * 0.1,
                             piece.piece.node.y * self.cell_size + self.cell_size * 0.1,
                         ),
                     )
@@ -255,24 +285,37 @@ class Board:
             number = str(i)
             text = pygame.font.Font(None, 48).render(number, True, (255, 255, 255))
             self.screen.blit(
-                text, (3 * self.margin // 4, (6 - i) * self.cell_size + self.cell_size // 2 - 10)
+                text,
+                (
+                    3 * self.margin // 4,
+                    (6 - i) * self.cell_size + self.cell_size // 2 - 10,
+                ),
             )
 
         # Draw letters at the bottom with bigger and white font
         for i, letter in enumerate("ABCDEFG"):
             text = pygame.font.Font(None, 48).render(letter, True, (255, 255, 255))
             self.screen.blit(
-                text, (i * self.cell_size + self.cell_size // 2 + self.margin - 10, 7 * self.cell_size)
+                text,
+                (
+                    i * self.cell_size + self.cell_size // 2 + self.margin - 10,
+                    7 * self.cell_size,
+                ),
             )
 
-
-        
         # Display the time taken to make a move
         time_text = f"Time: {self.time_display_string}"
-        score_display = pygame.font.Font(None, 36).render(time_text, True, (255, 255, 255))
-        score_rect = pygame.Rect(0, 0, score_display.get_width(), score_display.get_height()) 
+        score_display = pygame.font.Font(None, 36).render(
+            time_text, True, (255, 255, 255)
+        )
+        score_rect = pygame.Rect(
+            0, 0, score_display.get_width(), score_display.get_height()
+        )
         # Scale the score_rect by 1.5
-        score_rect.topleft = (self.screen.get_width() - score_display.get_width() - 50, 10)
+        score_rect.topleft = (
+            self.screen.get_width() - score_display.get_width() - 50,
+            10,
+        )
 
         # Draw black box with rounded edges
         pygame.draw.rect(self.screen, (0, 0, 0), score_rect, border_radius=10)
@@ -280,8 +323,8 @@ class Board:
         # Draw the score display on the black box
         self.screen.blit(score_display, score_rect.topleft)
 
-        turn_text = f"Turn: {self.turn.capitalize()}"
-        player_color = (255, 255, 255) if self.turn == "white" else (255, 165, 0)
+        turn_text = f"Turn: {str(self.turn).capitalize()}"
+        player_color = (255, 255, 255) if self.turn == Player.white else (255, 165, 0)
         turn_display = pygame.font.Font(None, 36).render(turn_text, True, player_color)
         self.screen.blit(
             turn_display,
@@ -292,31 +335,37 @@ class Board:
         )
 
         # Display phase with smaller font and appropriate colors
-        phase_text = f"{self.phase.capitalize()}"
+        phase_text = f"{str(self.phase).capitalize()}"
         match self.phase:
-            case "placing":
-                phase_color = (255,254,222)
-            case "moving":
+            case Phase.placing:
+                phase_color = (255, 254, 222)
+            case Phase.moving:
                 phase_color = (100, 100, 255)
-            case "capturing":
+            case Phase.capturing:
                 phase_color = (255, 0, 0)
+
         phase_display = pygame.font.Font(None, 36).render(phase_text, True, phase_color)
         self.screen.blit(
             phase_display,
             (
                 self.screen.get_width() - phase_display.get_width() - 80,
-                ((self.screen.get_height()-self.margin) // 2) - phase_display.get_height() // 2,
+                ((self.screen.get_height() - self.margin) // 2)
+                - phase_display.get_height() // 2,
             ),
         )
 
         # Check if the game is over and display game over self.screen
         if self.game_over:
             if self.is_draw:
-                game_over_text = pygame.font.Font(None, 72).render("Game Over: Draw!", True, (255, 255, 255))
-            else:
-                winner = self.winner or ("Orange" if self.turn == "white" else "White")
                 game_over_text = pygame.font.Font(None, 72).render(
-                    "Game Over: " + winner + " wins!", True, (255, 255, 255)
+                    "Game Over: Draw!", True, (255, 255, 255)
+                )
+            else:
+                winner = self.winner or (
+                    "Orange" if self.turn == Player.white else "White"
+                )
+                game_over_text = pygame.font.Font(None, 72).render(
+                    "Game Over: " + str(winner) + " wins!", True, (255, 255, 255)
                 )
             self.screen.blit(
                 game_over_text,
@@ -328,13 +377,17 @@ class Board:
         # Display "Thinking" next to non-interactable pieces during their turn
         for player in self.pieces:
             if player not in self.interactables and self.turn == player:  # type: ignore
-                thinking_text = pygame.font.Font(None, 24).render("Thinking" + "." * int(time.time() % 3), True, (255, 255, 255))
+                thinking_text = pygame.font.Font(None, 24).render(
+                    "Thinking" + "." * int(time.time() % 3), True, (255, 255, 255)
+                )
                 # display text to right of the self.screen, up if white, down if orange
                 self.screen.blit(
                     thinking_text,
                     (
-                        self.screen.get_width() - thinking_text.get_width() -80 ,
-                        self.screen.get_height() - 3 * self.margin if player == "orange" else 2* self.margin,
+                        self.screen.get_width() - thinking_text.get_width() - 80,
+                        self.screen.get_height() - 3 * self.margin
+                        if player == Player.orange
+                        else 2 * self.margin,
                     ),
                 )
         # Update the display
@@ -355,20 +408,31 @@ class Board:
 
     def _check_game_over(self):
         game_over_result = (
-            self.available_pieces["orange"] == 0
-            and self.available_pieces["white"] == 0
-            and (len(self.pieces["orange"]) < 3 or len(self.pieces["white"]) < 3)
+            self.available_pieces[Player.orange] == 0
+            and self.available_pieces[Player.white] == 0
+            and (
+                len(self.pieces[Player.orange]) < 3
+                or len(self.pieces[Player.white]) < 3
+            )
         )
 
         if game_over_result:
-            self.winner = "orange" if len(self.pieces["white"]) < 3 else "white"
+            self.winner = (
+                Player.orange if len(self.pieces[Player.white]) < 3 else Player.white
+            )
 
         return game_over_result
 
     @staticmethod
     def _update_mill_count(board: "Board"):
+        if board.piece_mapping is None:
+            return
         for piece in board.piece_mapping.values():
             piece.mill_count = 0
+
+        if board.current_mills is None:
+            return
+
         for mill in board.current_mills:
             for pid in mill[0]:
                 if pid in board.piece_mapping:
