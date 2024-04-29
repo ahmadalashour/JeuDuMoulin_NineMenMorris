@@ -218,7 +218,7 @@ class MinMaxAgent:
 
         possible_moves = self.generate_possible_moves(board)
         next_n_fanning = None
-        if fanning and fanning > 0:
+        if fanning and fanning > 0 and (len(board.pieces["orange"]) <= 3 or len(board.pieces["white"]) <= 3):
             fanning = int (depth * fanning)
     
             if first_call:

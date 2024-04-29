@@ -109,7 +109,7 @@ EVALUATION_COEFFICIENTS = {
     "moving": {
         "sparsity": 0.0,
         "n_pieces": 1.0,
-        "n_mills": 0.6,
+        "n_mills": 0.8,
         "entropy": 0.3,
     },
     "flying": {
@@ -121,4 +121,4 @@ EVALUATION_COEFFICIENTS = {
 }
 
 
-N_REPITITIONS = 1
+N_REPITITIONS = 3

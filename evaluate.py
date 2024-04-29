@@ -63,7 +63,7 @@ def main():
                 board.latest_phase = board.phase
 
                 print("Starting game : ")
-                print("Difficulty : ", TRAINING_PARAMETERS["DIFFICULTY"])
+                print("Difficulty : ", difficulty_1, difficulty_2)
                 print("Interactables : ", TRAINING_PARAMETERS["INTERACTABLES"])
                 print("Use sparsity : ", TRAINING_PARAMETERS["USE_SPARSITY"])
                 print("Stupidity : ", TRAINING_PARAMETERS["STUPIDITY"])
