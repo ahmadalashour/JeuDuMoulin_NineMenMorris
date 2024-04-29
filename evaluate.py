@@ -33,14 +33,13 @@ def main():
         screen = None
 
     # Evaluation Results
-    evaluation_folder = Path(
-        "./evaluation_results/{}".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-    )
+    evaluation_folder = Path("./evaluation_results/")
     evaluation_folder.mkdir(exist_ok=True, parents=True)
 
     # Loop over all possible combinations of difficulties
-    for difficulty_1 in range(1, 6):
-        for difficulty_2 in range(1, 6):
+    for difficulty_1 in range(3, 4):
+        for difficulty_2 in range(1, 2):
+            file_path = evaluation_folder / f"evaluation_diff_{difficulty_1}_vs_{difficulty_2}.txt"
             for i in range(N_REPITITIONS):
                 start_time = datetime.datetime.now()
 
@@ -132,12 +131,13 @@ def main():
                         print("Game over")
                         print("N Pieces ", board.pieces)
                         end_time = datetime.datetime.now()
-                        with open(evaluation_folder / "evaluation_results.txt", "a") as f:
+                        with open(file_path, "a") as f:
                             f.write("Game : {}\n".format(i))
                             f.write("Start Time : {} , End Time : {}\n".format(start_time, end_time))
                             f.write(
                                 "Difficulties : Orange : {} White : {}\n".format(difficulty_1, difficulty_2)
                             )
+                            f.write("Number of pieces : {'orange': %d, 'white': %d}\n" % (len(board.pieces['orange']), len(board.pieces['white'])))
                             f.write("Training Parameters : \n")
                             f.write("Use Sparsity : {}\n".format(TRAINING_PARAMETERS["USE_SPARSITY"]))
                             f.write("Stupidity : {}\n".format(TRAINING_PARAMETERS["STUPIDITY"]))
