@@ -29,7 +29,7 @@ def main():
     else:
         screen = None
     board = Board(
-        interactables=TRAINING_PARAMETERS["INTERACTABLES"],  # type: ignore
+        interactables=TRAINING_PARAMETERS["INTERACTABLES"], # type: ignore
         screen=screen,
         margin=MARGIN,
         cell_size=CELL_SIZE,
@@ -40,8 +40,8 @@ def main():
         max_n_samples = {
             turn: int(
                 np.exp(
-                    np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"])  # type: ignore
-                    / TRAINING_PARAMETERS["DIFFICULTY"][turn]  # type: ignore
+                    np.log(TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) # type: ignore
+                    / TRAINING_PARAMETERS["DIFFICULTY"][turn] # type: ignore
                 )  # type: ignore
                 # type: ignore
             )
@@ -50,8 +50,8 @@ def main():
 
     agents = {
         color: (
-            MinMaxAgent(max_n_samples=TRAINING_PARAMETERS["MAX_N_OPERATIONS"])  # type: ignore
-            if color not in board.interactables  # type: ignore
+            MinMaxAgent(max_n_samples=TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) # type: ignore
+            if color not in board.interactables # type: ignore
             else HumanAgent()
         )
         for color in board.available_pieces.keys()
@@ -124,25 +124,26 @@ def process_bot(
     latest_moves: list,
     can_add: bool,
 ):
+    
     global ai_thinking, play_sound
+    
     best_move, _ = agents[board.turn].minimax(  # type: ignore
         board,
         depth=TRAINING_PARAMETERS["DIFFICULTY"][board.turn],  # type: ignore
         alpha=float("-inf"),
         beta=float("inf"),
         fanning=max_n_samples[board.turn],
-        multicore=TRAINING_PARAMETERS["N_PROCESS"],  # type: ignore
+        multicore=TRAINING_PARAMETERS["N_PROCESS"], # type: ignore
     )
     move = agents[board.turn].make_move(
-        board,
-        best_move,
-        render=TRAINING_PARAMETERS["RENDER"],  # type: ignore
+        board, best_move, render=TRAINING_PARAMETERS["RENDER"] # type: ignore
     )  # type: ignore
 
     if can_add:
         if move is not None:
             latest_moves.append(move)
 
+    
     ai_thinking = False
     play_sound = True
 
