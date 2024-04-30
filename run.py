@@ -7,15 +7,17 @@ from src.agents.human_agent import HumanAgent
 import numpy as np
 from threading import Thread
 
+# Control variables to manage AI thinking state and sound playback.
 ai_thinking = False
 play_sound = False
 
 
 def main():
-    """Main function to run the game."""
+    """ Main function to execute the game setup and loop. """
 
     global ai_thinking, play_sound
 
+    # Set up the display if rendering is enabled in training parameters.
     if TRAINING_PARAMETERS["RENDER"]:
         import pygame
 
@@ -28,6 +30,8 @@ def main():
         background_music.play(-1)
     else:
         screen = None
+
+    # Initialize the game board with specific settings such as interactables and display properties.
     board = Board(
         interactables=TRAINING_PARAMETERS["INTERACTABLES"], # type: ignore
         screen=screen,
@@ -35,6 +39,7 @@ def main():
         cell_size=CELL_SIZE,
     )  # type: ignore
 
+    # Calculate the maximum number of operations allowed for each player based on difficulty settings.
     max_n_samples = {Player.orange: None, Player.white: None}
     if TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
         max_n_samples = {
@@ -47,7 +52,7 @@ def main():
             )
             for turn in [Player.orange, Player.white]
         }
-
+    # Assign agents to each player based on their interactability, with MinMaxAgents for non-interactables.
     agents = {
         color: (
             MinMaxAgent(max_n_samples=TRAINING_PARAMETERS["MAX_N_OPERATIONS"]) # type: ignore
@@ -69,7 +74,8 @@ def main():
     latest_moves = []
     can_add = False
 
-    while True:  # Main game loop
+    # Main game loop to handle game logic and rendering.
+    while True:  
         board.update_draggable_pieces()
         if TRAINING_PARAMETERS["RENDER"]:
             board.draw()
@@ -92,6 +98,7 @@ def main():
         if TRAINING_PARAMETERS["RENDER"]:
             board.draw()
 
+        # Handle AI turn without letting the player interact while the AI is thinking.
         if board.turn not in board.interactables:  # type: ignore
             if not board.game_over:
                 if isinstance(agents[board.turn], MinMaxAgent):
@@ -102,10 +109,12 @@ def main():
                             args=(board, agents, max_n_samples, latest_moves, can_add),
                         ).start()
 
+        # Play movement sound if set to play.
         if TRAINING_PARAMETERS["RENDER"] and play_sound:
             move_sound.play()
             play_sound = False
 
+        # Update game state rules and progress.
         if not can_add and board.phase == Phase.moving:
             can_add = True
 
@@ -124,9 +133,10 @@ def process_bot(
     latest_moves: list,
     can_add: bool,
 ):
-    
+    """ Function to process AI moves using MinMax strategy in a separate process. and update the game state according."""
     global ai_thinking, play_sound
     
+    # Calculate the best move for the current player using the MinMax algorithm with the given parameters.
     best_move, _ = agents[board.turn].minimax(  # type: ignore
         board,
         depth=TRAINING_PARAMETERS["DIFFICULTY"][board.turn],  # type: ignore
@@ -135,6 +145,8 @@ def process_bot(
         fanning=max_n_samples[board.turn],
         multicore=TRAINING_PARAMETERS["N_PROCESS"], # type: ignore
     )
+
+    # Make the best move on the board and render the move when rendering is enabled.
     move = agents[board.turn].make_move(
         board, best_move, render=TRAINING_PARAMETERS["RENDER"] # type: ignore
     )  # type: ignore

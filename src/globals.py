@@ -1,3 +1,9 @@
+"""
+This file defines various constants and configurations used in the game environment and AI evaluation.
+"""
+
+
+
 from pathlib import Path
 from src.game_env.node import Node
 from collections import defaultdict
@@ -30,14 +36,23 @@ class Action(Enum):
         return self.value
 
 
+# Paths to player icons
 ICONS = {
     Player.orange: Path("assets/orangeplayer.png"),
     Player.white: Path("assets/whiteplayer.png"),
 }
+
+# Initial positions for players
 INITIAL_POSITIONS = {Player.orange: "h2", Player.white: "h4"}
+
+# Constants for grid cell size and margin
 CELL_SIZE = 80
 MARGIN = 50
+
+# Minimum number of moves required for a draw
 MIN_DRAW_MOVES = 50
+
+# Define the nodes (points) on the game board
 NODES = [
     Node("a0"),
     Node("d0"),
@@ -64,6 +79,8 @@ NODES = [
     Node("d6"),
     Node("g6"),
 ]
+
+# Define the edges (connections between nodes) on the game board
 EDGES: list[tuple[Node, Node]] = [
     # Horizontal edges
     (Node("a0"), Node("d0")),
@@ -102,15 +119,16 @@ EDGES: list[tuple[Node, Node]] = [
 ]
 
 
-# Create a lookup table
+# Create a lookup table for quick access to node connections
 NODE_LOOKUP = defaultdict(list[Node])
 for edge in EDGES:
     NODE_LOOKUP[edge[0]].append(edge[1])
     NODE_LOOKUP[edge[1]].append(edge[0])
 
+# Training parameters for AI and game settings
 TRAINING_PARAMETERS = dict(
     # Global variables
-    RENDER=False,
+    RENDER=True,
     INTERACTABLES=[],
     DIFFICULTY={
         Player.orange: 5,
@@ -122,26 +140,27 @@ TRAINING_PARAMETERS = dict(
     N_PROCESS=-1,
 )
 
+# Evaluation coefficients for different game phases
 EVALUATION_COEFFICIENTS = {
     "placing": {
-        "sparsity": 0.1,
-        "n_pieces": 0.2,
-        "n_mills": 1.0,
-        "entropy": 0.1,
+        "sparsity": 0.3,
+        "n_pieces": 0.1,
+        "n_mills": 0.9,
+        "entropy": 0.2,
     },
     "moving": {
         "sparsity": 0.0,
-        "n_pieces": 1.0,
-        "n_mills": 0.8,
-        "entropy": 0.3,
+        "n_pieces": 0.1,
+        "n_mills": 0.9,
+        "entropy": 0.2,
     },
     "flying": {
         "sparsity": 0.0,
-        "n_pieces": 1.0,
-        "n_mills": 1.0,
-        "entropy": 0.1,
+        "n_pieces": 0.1, 
+        "n_mills": 0.9,
+        "entropy": 0.2,
     },
 }
 
 
-N_REPITITIONS = 1
+N_REPITITIONS = 55

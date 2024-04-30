@@ -47,7 +47,7 @@ class Board:
     sid: int = 0
     is_draw: bool = False
     piece_mapping: Optional[dict[int, DraggablePiece]] = None
-    started_moving: bool = False
+    started_moving: bool = False 
     time: float = time.time()
 
     def __init__(
@@ -64,6 +64,8 @@ class Board:
         self.cell_size = cell_size
         self.margin = margin
         self.interactables = interactables or []
+
+        # Initialize the pieces on the board, with ids for each piece, this applies to both players
         self.pieces = {
             Player.orange: [
                 DraggablePiece(
@@ -84,14 +86,18 @@ class Board:
             piece.id: piece for player in self.pieces.values() for piece in player
         }
 
+        # Update the id of the next piece to be added to the board
         self.sid += 2
 
+        # Initialize the number of available pieces for each player
         self.available_pieces = {Player.orange: 8, Player.white: 8}
         self.timers = {}
 
     @property
     def time_display_string(self) -> str:
         """Return the time taken to make a move as a string."""
+
+
         time_diff = time.time() - self.time
         hours = int(time_diff // 3600)
         minutes = int((time_diff % 3600) // 60)
@@ -109,6 +115,7 @@ class Board:
 
     def ai_copy(self) -> "Board":
         """Create a copy of the board for the AI to use."""
+
         new_board = Board(cell_size=self.cell_size, margin=self.margin)
         new_board.pieces = {
             player: [piece.copy_ai() for piece in self.pieces[player]]
@@ -120,6 +127,7 @@ class Board:
             piece.id: piece for player in new_board.pieces.values() for piece in player
         }
         ids = list(new_board.piece_mapping.keys())
+        # copying the board state, means the turn, phase, winner, is_draw, and started_moving
         new_board.turn = deepcopy(self.turn)
         new_board.phase = deepcopy(self.phase)
         new_board.sid = deepcopy(self.sid)
@@ -143,23 +151,36 @@ class Board:
             for mill in new_board.current_mills
             if all(pid in ids for pid in mill[0])
         ]
-
+        # update the mill count for each piece
         self._update_mill_count(new_board)
         new_board.available_nodes = deepcopy(self.available_nodes)
 
+        # return the new board with the copied state, this allows 
+        # the AI to make moves on the board to get the best move without affecting the current board
         return new_board
 
     def update_draggable_pieces(self):
-        """Update the position of the draggable pieces on the board."""
+        """
+        Update the position of the draggable pieces on the board. this is called every frame to update the position of the pieces
+        to allow for smooth movement of the pieces on the board
+        """
+        # start the timer for updating the draggable pieces
         self._start_timer("update_draggable_pieces")
+
+        # this is used to check if the player has started moving their pieces
         self.started_moving = True
+
+        # loop through all the pieces on the board
         for player_pieces in self.pieces.values():
             empty_slot = True
             for piece in player_pieces:
                 if self.screen:
                     piece.update_position()
+                # if the first move is made, empty slot is set to False to indicate that the player has started moving
                 if piece.first_move:
                     empty_slot = False
+
+            # if the player has started moving and there are available pieces, add a new piece to the board because an empty slot is left behind
             if empty_slot and self.available_pieces[player_pieces[0].piece.player] > 0:
                 self.pieces[player_pieces[0].piece.player].append(
                     DraggablePiece(
@@ -168,6 +189,8 @@ class Board:
                         id=self.sid,
                     )
                 )
+                # Update the piece mapping with the new piece, PS: the piece mapping means the id of the piece and the piece itself
+                # this is used to track the pieces on the board and their movements
                 if self.piece_mapping:
                     self.piece_mapping[self.sid] = self.pieces[
                         player_pieces[0].piece.player
@@ -178,9 +201,11 @@ class Board:
             if any(piece.first_move for piece in player_pieces):
                 self.started_moving = False
 
+        # if players have started moving their pieces, change the phase to moving
         if self.started_moving and self.phase == Phase.placing:
             self.phase = Phase.moving
 
+        # update the mill count for each piece
         self._update_mill_count(self)
 
         self._end_timer("update_draggable_pieces")
@@ -395,17 +420,21 @@ class Board:
         self._end_timer("draw")
 
     def _start_timer(self, key):
+        """Start a timer for a given operation."""
         self.timers[key] = time.time()
 
     def _end_timer(self, key):
+        """End a timer for a given operation."""
         pass
         # time.time() - self.timers[key]
         # uncomment to display times
         # print(f"Time taken for {key}: {elapsed_time} seconds")
 
+    # private method that return the board state as a string, with the turn and the phase, this help for better game state representation
     def __repr__(self):
         return f"Board(turn={self.turn}, phase={self.phase})"
 
+    # private method that checks if the game is over
     def _check_game_over(self):
         game_over_result = (
             self.available_pieces[Player.orange] == 0
@@ -415,7 +444,7 @@ class Board:
                 or len(self.pieces[Player.white]) < 3
             )
         )
-
+        # if the game is over, set the winner to the player with the most pieces
         if game_over_result:
             self.winner = (
                 Player.orange if len(self.pieces[Player.white]) < 3 else Player.white
@@ -424,6 +453,7 @@ class Board:
         return game_over_result
 
     @staticmethod
+    # private method that updates the mill count for each piece on the board
     def _update_mill_count(board: "Board"):
         if board.piece_mapping is None:
             return

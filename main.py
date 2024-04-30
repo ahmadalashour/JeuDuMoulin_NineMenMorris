@@ -26,7 +26,7 @@ def draw_rounded_button(rect, color, text, text_color, radius=10):
     draw_text(text, text_color, rect.centerx, rect.centery)
 
 
-# Main menu loop
+# Main menu loop, handles user interaction and game setting adjustments
 def main_menu():
     """Main menu loop to select the players and start the game."""
     button_width = 300
@@ -34,6 +34,8 @@ def main_menu():
     button_margin = 20
     row_height = button_height + button_margin
     top_margin = 180  # Adjust this value to lower the buttons
+
+    # Initial difficulty setting from the global parameters
     difficulty = TRAINING_PARAMETERS["DIFFICULTY"][Player.orange]  # type: ignore
     while True:
         window_surface.blit(background_image, (0, 0))
@@ -54,6 +56,7 @@ def main_menu():
             WHITE,
         )
 
+        # Interactables with player
         interactables_white_button_rect = pygame.Rect(
             50 + button_width + button_margin, top_margin, button_width, button_height
         )
@@ -68,6 +71,9 @@ def main_menu():
             ),  # type: ignore
             WHITE,
         )
+
+        # Additional game settings buttons
+
 
         difficulty_button_rect = pygame.Rect(
             50, top_margin + button_height * 2, button_width, button_height
@@ -115,19 +121,24 @@ def main_menu():
             WHITE,
         )
 
+        # Start game button
         start_button_rect = pygame.Rect(
             250, top_margin + 4 * row_height, button_width, button_height
         )
         draw_rounded_button(start_button_rect, SOFT_BLUE, "Start Game", WHITE)
+
+        # Event handling for button clicks and mouseovers
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
             elif event.type in [MOUSEMOTION, MOUSEBUTTONDOWN]:
                 x, y = pygame.mouse.get_pos()
+                # Button interactions, toggling settings or starting the game
                 if interactables_orange_button_rect.collidepoint(x, y):
                     if event.type == MOUSEBUTTONDOWN:
-                        click_sound.play()
+                        click_sound.play() # sound effect when button is clicked
+                        # Toggle between human and bot for Orange player
                         if TRAINING_PARAMETERS["INTERACTABLES"]:
                             TRAINING_PARAMETERS["INTERACTABLES"][0] = (  # type: ignore
                                 "Human"
@@ -151,6 +162,7 @@ def main_menu():
                 elif difficulty_button_rect.collidepoint(x, y):
                     if event.type == MOUSEBUTTONDOWN:
                         click_sound.play()
+                        # Cycle through the difficulty levels
                         difficulty = (difficulty % 10) + 1  # type: ignore
 
                 elif stupidity_button_rect.collidepoint(x, y):
@@ -171,6 +183,7 @@ def main_menu():
                 elif max_operations_button_rect.collidepoint(x, y):
                     if event.type == MOUSEBUTTONDOWN:
                         click_sound.play()
+                        # Adjust the max operations allowed, this increases progressively
                         if not TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
                             TRAINING_PARAMETERS["MAX_N_OPERATIONS"] = 10000
                         elif TRAINING_PARAMETERS["MAX_N_OPERATIONS"] < 1000000:  # type: ignore
@@ -206,11 +219,12 @@ def main_menu():
 
                         TRAINING_PARAMETERS["DIFFICULTY"][Player.orange] = difficulty  # type: ignore
                         TRAINING_PARAMETERS["DIFFICULTY"][Player.white] = difficulty  # type: ignore
+                        # Finish with settings setup and start the game
                         main_menu_soundtrack.stop()
                         main()
                         return
 
-        pygame.display.update()
+        pygame.display.update() # Update the display to reflect changes
 
 
 if __name__ == "__main__":

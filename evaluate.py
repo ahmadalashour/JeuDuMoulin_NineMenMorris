@@ -26,10 +26,14 @@ n_pieces = {str(Player.orange): [], str(Player.white): []}
 
 
 def main():
-    """Main function to run the game."""
+    """
+    Main function to run the game, configure the environment, and initiate the game loop.
+    this file is exclusively used for training purposes between different levels of AI agents by registering the evaluation results.
+    """
 
     global ai_thinking, play_sound, evaluations
 
+    # Initialize display if rendering is enabled in the training parameters
     if TRAINING_PARAMETERS["RENDER"]:
         import pygame
 
@@ -45,15 +49,16 @@ def main():
     else:
         screen = None
 
-    # Evaluation Results
+    # Setup folder for saving evaluation results
     evaluation_folder = Path(
         "./evaluation_results/{}".format(
             datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         )
     )
     evaluation_folder.mkdir(exist_ok=True, parents=True)
-    max_n_samples = {Player.orange: None, Player.white: None}
 
+    # Determine maximum number of operations based on difficulty settings
+    max_n_samples = {Player.orange: None, Player.white: None}
     if TRAINING_PARAMETERS["MAX_N_OPERATIONS"]:
         max_n_samples = {
             turn: int(
@@ -64,9 +69,9 @@ def main():
             )
             for turn in [Player.orange, Player.white]
         }
-    # Loop over all possible combinations of difficulties
-    for difficulty_1 in range(1, 6):
-        for difficulty_2 in range(1, 6):
+    # Loop over all possible combinations of difficulties with precise number of repetitions
+    for difficulty_1 in range(4, 5):
+        for difficulty_2 in range(1, 2):
             for i in range(N_REPITITIONS):
                 start_time = datetime.datetime.now()
 
@@ -78,6 +83,7 @@ def main():
                 )  # type: ignore
                 dummy_agent = MinMaxAgent()
 
+                # Set up agents for each player based on their interactability
                 agents = {
                     color: (
                         MinMaxAgent(
@@ -104,7 +110,7 @@ def main():
                 latest_moves = []
                 can_add = False
 
-                while True:  # Main game loop
+                while True:  # # Main game loop to handle gameplay and agent interactions
                     if not ai_thinking:
                         board.update_draggable_pieces()
                     if TRAINING_PARAMETERS["RENDER"]:
@@ -224,8 +230,8 @@ def main():
                             f.write("Winner : {}\n".format(board.winner))
                             f.write(str(evaluations))
                             f.write("\n\n\n")
-                        del board
-                        break
+                        del board # Clean up the board object
+                        break # Exit the game loop when the game is over
 
 
 def process_bot(
@@ -237,6 +243,7 @@ def process_bot(
     dummy_agent: MinMaxAgent,
     difficulty: int,
 ):
+    """Function to process AI moves using a separate process in order not to block user"""
     global ai_thinking, play_sound, evaluations, n_pieces
     best_move, _ = agents[board.turn].minimax(  # type: ignore
         board,

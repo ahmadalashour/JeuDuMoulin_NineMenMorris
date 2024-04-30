@@ -39,9 +39,11 @@ class Piece:
 
     def __post_init__(self):
         if not self.node:
+            """Set the initial position of the piece."""
             self.node = Node(INITIAL_POSITIONS[self.player])
 
     def surface(self):
+        """Get the surface of the piece, which represents the piece icon on the board."""
         return str(ICONS[self.player])
 
 
@@ -86,11 +88,14 @@ class DraggablePiece:
             bool: Whether the nodes form a mill.
         """
 
+        # Check if the nodes are connected to each other
         edge_check = (
             (nodes[0] in NODE_LOOKUP[nodes[1]] and nodes[1] in NODE_LOOKUP[nodes[0]])
             or (nodes[1] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[1]])
             or (nodes[0] in NODE_LOOKUP[nodes[2]] and nodes[2] in NODE_LOOKUP[nodes[0]])
         )
+
+        # Check if the nodes are in a straight line, either horizontally or vertically
         return edge_check and (
             nodes[0].x == nodes[1].x == nodes[2].x
             or nodes[0].y == nodes[1].y == nodes[2].y
@@ -120,30 +125,40 @@ class DraggablePiece:
         from pygame.locals import MOUSEBUTTONDOWN
         import pygame
 
+        # Check if the piece can be removed. First, check if the first move has been made.
         if not self.first_move:
             if event.type == MOUSEBUTTONDOWN:
+                # Get the mouse position
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 piece_x = self.piece.node.x * self.cell_size + self.margin  # type: ignore
                 piece_y = self.piece.node.y * self.cell_size  # type: ignore
                 surface_path = self.piece.surface()
+                # Load the piece surface
                 surface = pygame.image.load(surface_path)
 
+                # Scale the surface to the cell size
                 surface = pygame.transform.scale(
                     surface, (self.cell_size, self.cell_size)
                 )
+
+                # Get the rectangle of the piece
                 piece_rect = surface.get_rect(topleft=(piece_x, piece_y))
+                # If there's no current mills, return False
                 if board.current_mills is None:
                     return False
+                # If the mouse is on the piece, and the piece can be removed:
                 if piece_rect.collidepoint(mouse_x, mouse_y):
                     if self.removable(board):
                         for mill in board.current_mills:
                             x, y, z = mill[0]
+                            # Allows the piece to be removed if there's a mill
                             if self.id in [x, y, z]:
                                 board.current_mills.remove(mill)
 
+                        # Remove the piece from the board
                         self.remove_mill_containing_piece(board)
                         return True
-
+        # if the piece can't be removed, because it's the first move or the piece is part of a mill,
         return False
 
     def handle_event(
@@ -153,9 +168,11 @@ class DraggablePiece:
         from pygame.locals import MOUSEBUTTONDOWN, MOUSEBUTTONUP
         import pygame
 
+        # If the piece is not interactable, do nothing
         if not self.interactable:
             return
 
+        # If the piece is interactable, check the event in phases like placing and moving
         if (
             board.phase == Phase.placing and self.first_move
         ) or board.phase == Phase.moving:
@@ -175,6 +192,7 @@ class DraggablePiece:
                     surface, (self.cell_size, self.cell_size)
                 )
 
+                # Get the rectangle of the piece
                 piece_rect = surface.get_rect(topleft=(piece_x, piece_y))
                 if piece_rect.collidepoint(mouse_x, mouse_y):
                     self.dragging = True
@@ -211,7 +229,11 @@ class DraggablePiece:
         Returns:
             Action: The action taken.
         """
+
+        # Check if the move is legal on the board before moving the piece
         legality = self.check_legal_move(board, new_node)
+
+        # If the move is legal, update the piece's position and the board's available nodes
         if new_node in NODES and legality in [Action.move, Action.remove]:
             self.piece.node = new_node
             if self.first_move:
@@ -222,8 +244,10 @@ class DraggablePiece:
             if self.starting_node in NODES:
                 board.available_nodes.append(self.starting_node)
             return legality
+        # If the move is not legal, return the piece to its starting position
         else:
             self.piece.node = self.starting_node  # type: ignore
+            # If the move is not legal, the action is to undo the move
             return Action.undo
 
     def update_position(self):
@@ -269,6 +293,7 @@ class DraggablePiece:
             # in this case we need to update the board formed mills
             self.remove_mill_containing_piece(board)
 
+        # Check if the node is occupied by another piece
         node_occupied = False
         for player_pieces in board.pieces.values():
             for piece in player_pieces:
@@ -276,8 +301,10 @@ class DraggablePiece:
                     if piece.piece.node == new_node:
                         node_occupied = True
 
+        # if the node is occupied, the action is to undo the move
         if node_occupied:
             return Action.undo
+        # If the node is not occupied, check if the move is legal
         else:
             player_controlled_nodes = [
                 piece.piece.node for piece in board.pieces[self.piece.player]
@@ -293,6 +320,7 @@ class DraggablePiece:
                 return Action.undo
 
             new_mills = []
+            # Check if the move forms a mill by checking all possible mills formed by three nodes and starting from the new node
             for second_node in NODE_LOOKUP[new_node]:
                 if (
                     second_node in player_controlled_nodes
@@ -305,6 +333,7 @@ class DraggablePiece:
                             and third_node != new_node
                             and third_node != second_node
                         ):
+                            # if the three nodes form a mill, add the mill to the list of new mills
                             if self.is_mill((new_node, second_node, third_node)):
                                 second_piece = [
                                     piece
@@ -333,6 +362,7 @@ class DraggablePiece:
                                 if board.current_mills is None:
                                     return Action.undo
 
+                                # Check if the mill is already formed or not, if not add it to the list of new mills
                                 if new_mill not in new_mills:
                                     if (
                                         new_mill not in board.formed_mills  # type: ignore
@@ -350,10 +380,13 @@ class DraggablePiece:
         return Action.move
 
     def __lt__(self, other):
+        """Less than comparison based on the piece id."""
         return self.id < other.id
 
     def __eq__(self, other):
+        """Check equality based on the piece id."""
         return self.id == other.id
 
     def __repr__(self) -> str:
+        """Defines the "official" string representation of the object."""
         return f"{self.piece.player} piece at {self.piece.node} with id {self.id} and state {self.first_move}"
