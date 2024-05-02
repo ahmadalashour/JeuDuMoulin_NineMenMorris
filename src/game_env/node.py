@@ -26,7 +26,7 @@ class Node:
         return self._y
 
     @classmethod
-    def from_coords(cls, x: int, y: int):
+    def from_coords(cls, x: int, y: int) -> "Node":
         """Method to create a node from coordinates.
 
         Args:
@@ -39,7 +39,7 @@ class Node:
         try:
             return cls(str_repr=chr(x + 97) + str(6 - y))
         except TypeError:
-            new_cls = cls(str_repr="a0")
+            new_cls = cls(str_repr="a0")  # Dummy node
             new_cls._x = x
             new_cls._y = y
             return new_cls
@@ -63,10 +63,7 @@ class Node:
         return self.x > other.x or (self.x == other.x and self.y > other.y)
 
     def __lt__(self, other):
-        return self.x < other.x or (self.x == other.x and self.y < other.y)
-
-    def __le__(self, other):
-        return self.x <= other.x and self.y <= other.y
+        return self.x < other.x or (self.x == other.x and self.y <= other.y)
 
     def __ge__(self, other):
         return self.x >= other.x and self.y >= other.y

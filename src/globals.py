@@ -1,20 +1,41 @@
 from pathlib import Path
 from src.game_env.node import Node
-from typing import Literal
 from collections import defaultdict
+from enum import Enum
+
+
+class Player(Enum):
+    orange = "orange"
+    white = "white"
+
+    def __str__(self) -> str:
+        return self.value
+
+class Phase(Enum):
+    placing = "placing"
+    moving = "moving"
+    capturing = "capturing"
+
+    def __str__(self) -> str:
+        return self.value
+
+class Action(Enum):
+    move = "move"
+    remove = "remove"
+    undo = "undo"
+
+    def __str__(self) -> str:
+        return self.value
+
 
 ICONS = {
-    "orange": Path("assets/orangeplayer.png"),
-    "white": Path("assets/whiteplayer.png"),
+    Player.orange: Path("assets/orangeplayer.png"),
+    Player.white: Path("assets/whiteplayer.png"),
 }
-
-INITIAL_POSITIONS = {"orange": "h2", "white": "h4"}
-Turn = Literal["orange", "white"]
-Action = Literal["move", "remove", "undo"]
+INITIAL_POSITIONS = {Player.orange: "h2", Player.white: "h4"}
 CELL_SIZE = 80
 MARGIN = 50
 MIN_DRAW_MOVES = 50
-
 NODES = [
     Node("a0"),
     Node("d0"),
@@ -41,8 +62,7 @@ NODES = [
     Node("d6"),
     Node("g6"),
 ]
-
-EDGES = [
+EDGES: list[tuple[Node, Node]] = [
     # Horizontal edges
     (Node("a0"), Node("d0")),
     (Node("d0"), Node("g0")),
@@ -79,28 +99,47 @@ EDGES = [
     (Node("g3"), Node("g6")),
 ]
 
+
 # Create a lookup table
-NODE_LOOKUP = defaultdict(list)
+NODE_LOOKUP = defaultdict(list[Node])
 for edge in EDGES:
     NODE_LOOKUP[edge[0]].append(edge[1])
     NODE_LOOKUP[edge[1]].append(edge[0])
 
 TRAINING_PARAMETERS = dict(
     # Global variables
-    RENDER=True,
+    RENDER=False,
     INTERACTABLES=[],
     DIFFICULTY={
-        "orange": 5,
-        "white": 5,
+        Player.orange: 5,
+        Player.white: 5,
     },
-    STUPIDITY=1.0,
+    STUPIDITY=0.5,
     USE_SPARSITY=True,
     MAX_N_OPERATIONS=None,
+    N_PROCESS=-1,
 )
 
 EVALUATION_COEFFICIENTS = {
-    "sparsity": 0.0,
-    "n_pieces": 1.0,
-    "n_mills": 0.3,
-    "entropy": 1.0,
+    "placing": {
+        "sparsity": 0.1,
+        "n_pieces": 0.2,
+        "n_mills": 1.0,
+        "entropy": 0.1,
+    },
+    "moving": {
+        "sparsity": 0.0,
+        "n_pieces": 1.0,
+        "n_mills": 0.8,
+        "entropy": 0.3,
+    },
+    "flying": {
+        "sparsity": 0.0,
+        "n_pieces": 1.0,
+        "n_mills": 1.0,
+        "entropy": 0.1,
+    },
 }
+
+
+N_REPITITIONS = 1
