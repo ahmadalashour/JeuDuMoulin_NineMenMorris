@@ -94,7 +94,6 @@ def main():
                 print("Starting game : ")
                 print("Difficulty : ", difficulty_1, difficulty_2)
                 print("Interactables : ", TRAINING_PARAMETERS["INTERACTABLES"])
-                print("Use sparsity : ", TRAINING_PARAMETERS["USE_SPARSITY"])
                 print("Stupidity : ", TRAINING_PARAMETERS["STUPIDITY"])
                 print(
                     "Max number of operations : ",
@@ -200,11 +199,6 @@ def main():
                                 )
                             )
                             f.write("Training Parameters : \n")
-                            f.write(
-                                "Use Sparsity : {}\n".format(
-                                    TRAINING_PARAMETERS["USE_SPARSITY"]
-                                )
-                            )
                             f.write(
                                 "Stupidity : {}\n".format(
                                     TRAINING_PARAMETERS["STUPIDITY"]

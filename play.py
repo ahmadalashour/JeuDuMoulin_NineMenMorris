@@ -1,7 +1,9 @@
 import sys
 
+import multiprocess
+
 from src.globals import TRAINING_PARAMETERS, Player
-from run import main
+from src import main
 
 # Colors
 WHITE = (255, 255, 255)
@@ -98,7 +100,7 @@ def main_menu():
         draw_rounded_button(
             sparsity_button_rect,
             SOFT_BLUE,
-            "Sparsity(DEV): " + str(TRAINING_PARAMETERS["USE_SPARSITY"]),
+            "N_Processors(DEV): " + str(TRAINING_PARAMETERS["N_PROCESS"]),
             WHITE,
         )
 
@@ -157,16 +159,14 @@ def main_menu():
                     if event.type == MOUSEBUTTONDOWN:
                         click_sound.play()
                         TRAINING_PARAMETERS["STUPIDITY"] = round(
-                            min(TRAINING_PARAMETERS["STUPIDITY"] + 0.1, 2.0), # type: ignore
+                            min(TRAINING_PARAMETERS["STUPIDITY"] + 0.1, 2.0),  # type: ignore
                             2,  # type: ignore
                         )  # type: ignore
 
                 elif sparsity_button_rect.collidepoint(x, y):
                     if event.type == MOUSEBUTTONDOWN:
                         click_sound.play()
-                        TRAINING_PARAMETERS["USE_SPARSITY"] = not TRAINING_PARAMETERS[
-                            "USE_SPARSITY"
-                        ]
+                        TRAINING_PARAMETERS["N_PROCESS"] = (1 + TRAINING_PARAMETERS["N_PROCESS"]) % multiprocess.cpu_count()  # type: ignore
 
                 elif max_operations_button_rect.collidepoint(x, y):
                     if event.type == MOUSEBUTTONDOWN:

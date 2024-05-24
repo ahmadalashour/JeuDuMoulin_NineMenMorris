@@ -48,7 +48,7 @@ class Board:
     is_draw: bool = False
     piece_mapping: Optional[dict[int, DraggablePiece]] = None
     started_moving: bool = False
-    time: float = time.time()
+    time: float = 0
 
     def __init__(
         self,
@@ -64,6 +64,7 @@ class Board:
         self.cell_size = cell_size
         self.margin = margin
         self.interactables = interactables or []
+        self.time = time.time()
         self.pieces = {
             Player.orange: [
                 DraggablePiece(
@@ -151,7 +152,6 @@ class Board:
 
     def update_draggable_pieces(self):
         """Update the position of the draggable pieces on the board."""
-        self._start_timer("update_draggable_pieces")
         self.started_moving = True
         for player_pieces in self.pieces.values():
             empty_slot = True
@@ -183,7 +183,6 @@ class Board:
 
         self._update_mill_count(self)
 
-        self._end_timer("update_draggable_pieces")
 
     def draw(self):
         """Draw the board on the screen.
@@ -195,7 +194,6 @@ class Board:
 
         if self.screen is None:
             return
-        self._start_timer("draw")
         # Load background image
         background = pygame.image.load("assets/background.jpg")
         background = pygame.transform.scale(
@@ -392,16 +390,6 @@ class Board:
                 )
         # Update the display
         pygame.display.flip()
-        self._end_timer("draw")
-
-    def _start_timer(self, key):
-        self.timers[key] = time.time()
-
-    def _end_timer(self, key):
-        pass
-        # time.time() - self.timers[key]
-        # uncomment to display times
-        # print(f"Time taken for {key}: {elapsed_time} seconds")
 
     def __repr__(self):
         return f"Board(turn={self.turn}, phase={self.phase})"

@@ -13,20 +13,15 @@ import dataclasses as dc
 from copy import deepcopy
 from src.game_env.node import Node
 from multiprocessing import Pool, cpu_count
-
+from abc import ABC
 import signal
 import time
 
 
 @dc.dataclass
-class MinMaxAgent:
-    """Class to represent a MinMax agent.
+class AutonomousAgent(ABC):
+    """Class to represent an autonomous agent."""
 
-    Args:
-        max_n_samples (int): The maximum number of samples to consider.
-    """
-
-    max_n_samples: int = 10000
     render_steps: int = 30
 
     @staticmethod
@@ -79,92 +74,6 @@ class MinMaxAgent:
                         generated_moves.append((None, piece.piece.node, Action.remove))
 
         return generated_moves
-
-    @staticmethod
-    def evaluate(
-        board: Board,
-        evaluation_coefficients: dict[str, dict[str, float]] = EVALUATION_COEFFICIENTS,
-        training_parameters: dict[str, Any] = TRAINING_PARAMETERS,
-        node_lookup: dict["Node", list["Node"]] = NODE_LOOKUP,
-    ) -> float:
-        """Method to evaluate the board state.
-
-        Args:
-            board (Board): The board to evaluate
-            evaluation_coefficients (dict[str, dict[str, float]], optional): The evaluation coefficients. Defaults to EVALUATION_COEFFICIENTS.
-            training_parameters (dict[str, Any], optional): The training parameters. Defaults to TRAINING_PARAMETERS.
-            node_lookup (dict[Node, list[Node]], optional): The node lookup. Defaults to NODE_LOOKUP.
-
-        Returns:
-            float: The evaluation of the board state.
-        """
-
-        game_phase = "placing"
-        if board.started_moving:
-            game_phase = "moving"
-            if len(board.pieces[board.turn]) <= 3:
-                game_phase = "flying"
-
-        coefs = evaluation_coefficients[game_phase]
-
-        sparsity_eval = 0
-        if training_parameters["USE_SPARSITY"]:
-            for player in [Player.orange, Player.white]:
-                for piece in board.pieces[player]:
-                    if len(board.pieces[player]) > 3:
-                        if board.available_nodes is None:
-                            continue
-                        availables = [
-                            node
-                            for node in node_lookup[piece.piece.node]
-                            if node in board.available_nodes
-                        ]
-                        sparsity_eval += (
-                            len(availables)
-                            if player == Player.orange
-                            else -len(availables)
-                        )
-
-        sparsity_eval = sparsity_eval / 24.0  # in the range [-1, 1]
-        n_pieces_eval = (
-            len(board.pieces[Player.orange]) - len(board.pieces[Player.white])
-        ) / 9.0  # in the range [-1, 1]
-
-        if board.started_moving:
-            if len(board.pieces[Player.orange]) <= 2:
-                return -np.inf
-            if len(board.pieces[Player.white]) <= 2:
-                return np.inf
-
-        if board.current_mills is None or board.piece_mapping is None:
-            return 0
-        white_mills = [
-            mill
-            for mill in board.current_mills
-            if board.piece_mapping[mill[0][0]].piece.player == player.white  # type: ignore
-        ]
-        orange_mills = [
-            mill
-            for mill in board.current_mills
-            if board.piece_mapping[mill[0][0]].piece.player == player.orange  # type: ignore
-        ]
-        n_mills_eval = (
-            len(orange_mills) - len(white_mills)
-        ) / 4.0  # in the range [-1, 1]
-
-        entropy = 0
-        if training_parameters["STUPIDITY"] > 0:
-            entropy = (
-                np.random.normal(0, training_parameters["STUPIDITY"])
-                / training_parameters["STUPIDITY"]
-            )  # in the range [-1, 1]
-
-        return (
-            coefs["sparsity"] * sparsity_eval
-            + coefs["n_pieces"] * n_pieces_eval
-            + coefs["n_mills"] * n_mills_eval
-            + coefs["entropy"] * entropy
-        )
 
     def make_move(
         self, board: Board, move: tuple[int | None, "Node", int], render: bool = True
@@ -234,6 +143,102 @@ class MinMaxAgent:
             return True
 
         return False
+
+
+@dc.dataclass
+class MinMaxAgent(AutonomousAgent):
+    """Class to represent a MinMax agent.
+
+    Args:
+        max_n_samples (int): The maximum number of samples to consider.
+    """
+
+    max_n_samples: int = 10000
+
+    @staticmethod
+    def evaluate(
+        board: Board,
+        evaluation_coefficients: dict[str, dict[str, float]] = EVALUATION_COEFFICIENTS,
+        training_parameters: dict[str, Any] = TRAINING_PARAMETERS,
+        node_lookup: dict["Node", list["Node"]] = NODE_LOOKUP,
+    ) -> float:
+        """Method to evaluate the board state.
+
+        Args:
+            board (Board): The board to evaluate
+            evaluation_coefficients (dict[str, dict[str, float]], optional): The evaluation coefficients. Defaults to EVALUATION_COEFFICIENTS.
+            training_parameters (dict[str, Any], optional): The training parameters. Defaults to TRAINING_PARAMETERS.
+            node_lookup (dict[Node, list[Node]], optional): The node lookup. Defaults to NODE_LOOKUP.
+
+        Returns:
+            float: The evaluation of the board state.
+        """
+
+        game_phase = "placing"
+        if board.started_moving:
+            game_phase = "moving"
+            if len(board.pieces[board.turn]) <= 3:
+                game_phase = "flying"
+
+        coefs = evaluation_coefficients[game_phase]
+
+        sparsity_eval = 0
+        for player in [Player.orange, Player.white]:
+            for piece in board.pieces[player]:
+                if len(board.pieces[player]) > 3:
+                    if board.available_nodes is None:
+                        continue
+                    availables = [
+                        node
+                        for node in node_lookup[piece.piece.node]
+                        if node in board.available_nodes
+                    ]
+                    sparsity_eval += (
+                        len(availables)
+                        if player == Player.orange
+                        else -len(availables)
+                    )
+
+        sparsity_eval = sparsity_eval / 24.0  # in the range [-1, 1]
+        n_pieces_eval = (
+            len(board.pieces[Player.orange]) - len(board.pieces[Player.white])
+        ) / 9.0  # in the range [-1, 1]
+
+        if board.started_moving:
+            if len(board.pieces[Player.orange]) <= 2:
+                return -np.inf
+            if len(board.pieces[Player.white]) <= 2:
+                return np.inf
+
+        if board.current_mills is None or board.piece_mapping is None:
+            return 0
+        white_mills = [
+            mill
+            for mill in board.current_mills
+            if board.piece_mapping[mill[0][0]].piece.player == player.white  # type: ignore
+        ]
+        orange_mills = [
+            mill
+            for mill in board.current_mills
+            if board.piece_mapping[mill[0][0]].piece.player == player.orange  # type: ignore
+        ]
+        n_mills_eval = (
+            len(orange_mills) - len(white_mills)
+        ) / 4.0  # in the range [-1, 1]
+
+        entropy = 0
+        if training_parameters["STUPIDITY"] > 0:
+            entropy = (
+                np.random.normal(0, training_parameters["STUPIDITY"])
+                / training_parameters["STUPIDITY"]
+            )  # in the range [-1, 1]
+
+        return (
+            coefs["sparsity"] * sparsity_eval
+            + coefs["n_pieces"] * n_pieces_eval
+            + coefs["n_mills"] * n_mills_eval
+            + coefs["entropy"] * entropy
+        )
 
     def minimax(
         self,
