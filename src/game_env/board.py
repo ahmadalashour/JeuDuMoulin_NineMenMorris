@@ -36,8 +36,8 @@ class Board:
         is_draw (bool): Whether the game is a draw.
     """
 
-    formed_mills: Optional[list[list[list[int | Node]]]] = None
-    current_mills: Optional[list[list[list[int | Node]]]] = None
+    formed_mills: Optional[list[list[list[int]]]] = None
+    current_mills: Optional[list[list[list[int]]]] = None
     turn: Player = Player.orange
     phase: Phase = Phase.placing
     latest_phase: Phase = Phase.placing

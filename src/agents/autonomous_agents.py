@@ -212,15 +212,16 @@ class MinMaxAgent(AutonomousAgent):
 
         if board.current_mills is None or board.piece_mapping is None:
             return 0
+        
         white_mills = [
             mill
             for mill in board.current_mills
-            if board.piece_mapping[mill[0][0]].piece.player == player.white  # type: ignore
+            if board.piece_mapping[mill[0][0]].piece.player == Player.white
         ]
         orange_mills = [
             mill
             for mill in board.current_mills
-            if board.piece_mapping[mill[0][0]].piece.player == player.orange  # type: ignore
+            if board.piece_mapping[mill[0][0]].piece.player == Player.orange
         ]
         n_mills_eval = (
             len(orange_mills) - len(white_mills)
