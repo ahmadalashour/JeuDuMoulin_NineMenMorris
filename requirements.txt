@@ -1,3 +1,5 @@
 pygame
 black 
 numpy
+pandas 
+matplotlib

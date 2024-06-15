@@ -11,6 +11,7 @@ class Player(Enum):
     def __str__(self) -> str:
         return self.value
 
+
 class Phase(Enum):
     placing = "placing"
     moving = "moving"
@@ -18,6 +19,7 @@ class Phase(Enum):
 
     def __str__(self) -> str:
         return self.value
+
 
 class Action(Enum):
     move = "move"
@@ -108,14 +110,13 @@ for edge in EDGES:
 
 TRAINING_PARAMETERS = dict(
     # Global variables
-    RENDER=False,
+    RENDER=True,
     INTERACTABLES=[],
     DIFFICULTY={
         Player.orange: 5,
         Player.white: 5,
     },
-    STUPIDITY=0.5,
-    USE_SPARSITY=True,
+    STUPIDITY=0.0,
     MAX_N_OPERATIONS=None,
     N_PROCESS=-1,
 )
